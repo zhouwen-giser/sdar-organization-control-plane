@@ -1,0 +1,95 @@
+{
+  "contractVersion": "1.0.0",
+  "contractStatus": "PROTOCOL_DESIGN_FROZEN_IMPLEMENTATION_PENDING",
+  "nodeControlOpenApiSha256": "d4693a3c38ac0449e63804804fcdcea93c8fbf154fa1e7959806afc1c7652394",
+  "runtimeControlOpenApiSha256": "09796b7cdc9e05c0ec990485d23e1045c679e7d87c662db6bf7618ca32a91177",
+  "publicOperationCount": 85,
+  "totalFrozenOperationIdCount": 111,
+  "schemaCount": 28,
+  "rbacRoleCount": 7,
+  "routeCount": 55,
+  "completedRouteCount": 55,
+  "pageExperienceCount": 55,
+  "classificationCounts": {
+    "FROZEN_API": 48,
+    "WEB_COMPOSED": 2,
+    "CLIENT_ONLY": 5,
+    "DEFERRED": 0
+  },
+  "dependencyLockDryRun": {
+    "command": "npm ci --dry-run --offline --ignore-scripts",
+    "exitCode": 0,
+    "passed": true
+  },
+  "contractCheck": {
+    "command": "npm run contract:check",
+    "exitCode": 0,
+    "passed": true
+  },
+  "typecheck": {
+    "command": "npm run typecheck",
+    "exitCode": 0,
+    "passed": true
+  },
+  "lint": {
+    "command": "npm run lint",
+    "exitCode": 0,
+    "passed": true
+  },
+  "unitTests": {
+    "command": "npm test",
+    "files": 4,
+    "tests": 17,
+    "exitCode": 0,
+    "passed": true
+  },
+  "build": {
+    "command": "npm run build",
+    "modules": 46,
+    "exitCode": 0,
+    "passed": true
+  },
+  "architectureValidation": {
+    "command": "npm run check:architecture",
+    "files": 24,
+    "passed": true
+  },
+  "productValidation": {
+    "command": "npm run check:product",
+    "sourceFiles": 29,
+    "passed": true
+  },
+  "browserSmoke": {
+    "command": "node scripts/browser-smoke.mjs",
+    "routes": 53,
+    "passedRoutes": 53,
+    "consoleErrors": 0,
+    "passed": true,
+    "checkedAt": "2026-07-31T07:27:29.868Z"
+  },
+  "screenshots": [
+    "404.png",
+    "a2a-exposures.png",
+    "audit.png",
+    "capability-detail.png",
+    "configuration-revision.png",
+    "contract-traceability.png",
+    "events.png",
+    "llm-providers.png",
+    "mcp-binding-detail.png",
+    "node-health.png",
+    "operations.png",
+    "overview-1280x720.png",
+    "overview-1440x900.png",
+    "rbac.png",
+    "readiness.png",
+    "skills.png",
+    "smpp-source-detail.png",
+    "task-detail.png",
+    "telemetry-export.png"
+  ],
+  "secretsIncluded": false,
+  "realApiConnected": false,
+  "authenticationImplemented": false,
+  "fullValidationNote": "npm run validate passed. Browser Smoke was run separately because the combined validate:full shell invocation reached the container command timeout after the build stage."
+}

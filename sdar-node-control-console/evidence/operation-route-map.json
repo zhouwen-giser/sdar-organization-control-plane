@@ -1,0 +1,682 @@
+[
+  {
+    "operationId": "getSdarNodeDeclaration",
+    "method": "GET",
+    "path": "/.well-known/sdar-node",
+    "tag": "Discovery",
+    "kind": "query",
+    "consoleRoutes": "/overview"
+  },
+  {
+    "operationId": "getNodeControlLiveness",
+    "method": "GET",
+    "path": "/health/live",
+    "tag": "Discovery",
+    "kind": "query",
+    "consoleRoutes": "/overview"
+  },
+  {
+    "operationId": "getNodeControlReadiness",
+    "method": "GET",
+    "path": "/health/ready",
+    "tag": "Discovery",
+    "kind": "query",
+    "consoleRoutes": "/overview"
+  },
+  {
+    "operationId": "getNodeProfile",
+    "method": "GET",
+    "path": "/api/v1/node",
+    "tag": "Node",
+    "kind": "query",
+    "consoleRoutes": "/node"
+  },
+  {
+    "operationId": "updateNodeProfileDraft",
+    "method": "PUT",
+    "path": "/api/v1/node/draft",
+    "tag": "Node",
+    "kind": "command",
+    "consoleRoutes": "/node"
+  },
+  {
+    "operationId": "validateNodeProfileDraft",
+    "method": "POST",
+    "path": "/api/v1/node/draft/validate",
+    "tag": "Node",
+    "kind": "command",
+    "consoleRoutes": "/node"
+  },
+  {
+    "operationId": "publishNodeProfileDraft",
+    "method": "POST",
+    "path": "/api/v1/node/draft/publish",
+    "tag": "Node",
+    "kind": "command",
+    "consoleRoutes": "/node"
+  },
+  {
+    "operationId": "getNodeHealth",
+    "method": "GET",
+    "path": "/api/v1/node/health",
+    "tag": "Node",
+    "kind": "query",
+    "consoleRoutes": "/node"
+  },
+  {
+    "operationId": "listConfigurationRevisions",
+    "method": "GET",
+    "path": "/api/v1/configuration-revisions",
+    "tag": "Configuration",
+    "kind": "query",
+    "consoleRoutes": "/configuration"
+  },
+  {
+    "operationId": "createConfigurationRevision",
+    "method": "POST",
+    "path": "/api/v1/configuration-revisions",
+    "tag": "Configuration",
+    "kind": "command",
+    "consoleRoutes": "/configuration"
+  },
+  {
+    "operationId": "getConfigurationRevision",
+    "method": "GET",
+    "path": "/api/v1/configuration-revisions/{configurationId}/{revision}",
+    "tag": "Configuration",
+    "kind": "query",
+    "consoleRoutes": "/configuration"
+  },
+  {
+    "operationId": "validateConfigurationRevision",
+    "method": "POST",
+    "path": "/api/v1/configuration-revisions/{configurationId}/{revision}/validate",
+    "tag": "Configuration",
+    "kind": "command",
+    "consoleRoutes": "/configuration"
+  },
+  {
+    "operationId": "publishConfigurationRevision",
+    "method": "POST",
+    "path": "/api/v1/configuration-revisions/{configurationId}/{revision}/publish",
+    "tag": "Configuration",
+    "kind": "command",
+    "consoleRoutes": "/configuration"
+  },
+  {
+    "operationId": "rollbackConfigurationRevision",
+    "method": "POST",
+    "path": "/api/v1/configuration-revisions/{configurationId}/{revision}/rollback",
+    "tag": "Configuration",
+    "kind": "command",
+    "consoleRoutes": "/configuration"
+  },
+  {
+    "operationId": "listLlmProviders",
+    "method": "GET",
+    "path": "/api/v1/llm-providers",
+    "tag": "LLM",
+    "kind": "query",
+    "consoleRoutes": "/llm/providers · /llm/routes"
+  },
+  {
+    "operationId": "createLlmProviderDraft",
+    "method": "POST",
+    "path": "/api/v1/llm-providers",
+    "tag": "LLM",
+    "kind": "command",
+    "consoleRoutes": "/llm/providers · /llm/routes"
+  },
+  {
+    "operationId": "getLlmProvider",
+    "method": "GET",
+    "path": "/api/v1/llm-providers/{providerId}",
+    "tag": "LLM",
+    "kind": "query",
+    "consoleRoutes": "/llm/providers · /llm/routes"
+  },
+  {
+    "operationId": "validateLlmProvider",
+    "method": "POST",
+    "path": "/api/v1/llm-providers/{providerId}/validate",
+    "tag": "LLM",
+    "kind": "command",
+    "consoleRoutes": "/llm/providers · /llm/routes"
+  },
+  {
+    "operationId": "listModelRoutes",
+    "method": "GET",
+    "path": "/api/v1/model-routes",
+    "tag": "LLM",
+    "kind": "query",
+    "consoleRoutes": "/llm/providers · /llm/routes"
+  },
+  {
+    "operationId": "createModelRouteDraft",
+    "method": "POST",
+    "path": "/api/v1/model-routes",
+    "tag": "LLM",
+    "kind": "command",
+    "consoleRoutes": "/llm/providers · /llm/routes"
+  },
+  {
+    "operationId": "getModelRoute",
+    "method": "GET",
+    "path": "/api/v1/model-routes/{routeId}",
+    "tag": "LLM",
+    "kind": "query",
+    "consoleRoutes": "/llm/providers · /llm/routes"
+  },
+  {
+    "operationId": "listSmppSources",
+    "method": "GET",
+    "path": "/api/v1/smpp-sources",
+    "tag": "SMPP",
+    "kind": "query",
+    "consoleRoutes": "/smpp/sources"
+  },
+  {
+    "operationId": "createSmppSourceDraft",
+    "method": "POST",
+    "path": "/api/v1/smpp-sources",
+    "tag": "SMPP",
+    "kind": "command",
+    "consoleRoutes": "/smpp/sources"
+  },
+  {
+    "operationId": "getSmppSource",
+    "method": "GET",
+    "path": "/api/v1/smpp-sources/{smppSourceId}",
+    "tag": "SMPP",
+    "kind": "query",
+    "consoleRoutes": "/smpp/sources"
+  },
+  {
+    "operationId": "syncSmppSource",
+    "method": "POST",
+    "path": "/api/v1/smpp-sources/{smppSourceId}/sync",
+    "tag": "SMPP",
+    "kind": "command",
+    "consoleRoutes": "/smpp/sources"
+  },
+  {
+    "operationId": "listMcpProviderCandidates",
+    "method": "GET",
+    "path": "/api/v1/mcp-provider-candidates",
+    "tag": "MCP",
+    "kind": "query",
+    "consoleRoutes": "/mcp/candidates · /mcp/bindings"
+  },
+  {
+    "operationId": "listMcpProviderBindings",
+    "method": "GET",
+    "path": "/api/v1/mcp-provider-bindings",
+    "tag": "MCP",
+    "kind": "query",
+    "consoleRoutes": "/mcp/candidates · /mcp/bindings"
+  },
+  {
+    "operationId": "importMcpProviderBinding",
+    "method": "POST",
+    "path": "/api/v1/mcp-provider-bindings",
+    "tag": "MCP",
+    "kind": "command",
+    "consoleRoutes": "/mcp/candidates · /mcp/bindings"
+  },
+  {
+    "operationId": "getMcpProviderBinding",
+    "method": "GET",
+    "path": "/api/v1/mcp-provider-bindings/{bindingId}",
+    "tag": "MCP",
+    "kind": "query",
+    "consoleRoutes": "/mcp/candidates · /mcp/bindings"
+  },
+  {
+    "operationId": "refreshMcpProviderBinding",
+    "method": "POST",
+    "path": "/api/v1/mcp-provider-bindings/{bindingId}/refresh",
+    "tag": "MCP",
+    "kind": "command",
+    "consoleRoutes": "/mcp/candidates · /mcp/bindings"
+  },
+  {
+    "operationId": "suspendMcpProviderBinding",
+    "method": "POST",
+    "path": "/api/v1/mcp-provider-bindings/{bindingId}/suspend",
+    "tag": "MCP",
+    "kind": "command",
+    "consoleRoutes": "/mcp/candidates · /mcp/bindings"
+  },
+  {
+    "operationId": "removeMcpProviderBinding",
+    "method": "POST",
+    "path": "/api/v1/mcp-provider-bindings/{bindingId}/remove",
+    "tag": "MCP",
+    "kind": "command",
+    "consoleRoutes": "/mcp/candidates · /mcp/bindings"
+  },
+  {
+    "operationId": "listSkills",
+    "method": "GET",
+    "path": "/api/v1/skills",
+    "tag": "Skills",
+    "kind": "query",
+    "consoleRoutes": "/skills"
+  },
+  {
+    "operationId": "importSkillPackage",
+    "method": "POST",
+    "path": "/api/v1/skills/import",
+    "tag": "Skills",
+    "kind": "command",
+    "consoleRoutes": "/skills"
+  },
+  {
+    "operationId": "listSkillVersions",
+    "method": "GET",
+    "path": "/api/v1/skills/{skillId}/versions",
+    "tag": "Skills",
+    "kind": "query",
+    "consoleRoutes": "/skills"
+  },
+  {
+    "operationId": "getSkillVersion",
+    "method": "GET",
+    "path": "/api/v1/skills/{skillId}/versions/{version}",
+    "tag": "Skills",
+    "kind": "query",
+    "consoleRoutes": "/skills"
+  },
+  {
+    "operationId": "publishSkillVersion",
+    "method": "POST",
+    "path": "/api/v1/skills/{skillId}/versions/{version}/publish",
+    "tag": "Skills",
+    "kind": "command",
+    "consoleRoutes": "/skills"
+  },
+  {
+    "operationId": "suspendSkillVersion",
+    "method": "POST",
+    "path": "/api/v1/skills/{skillId}/versions/{version}/suspend",
+    "tag": "Skills",
+    "kind": "command",
+    "consoleRoutes": "/skills"
+  },
+  {
+    "operationId": "deprecateSkillVersion",
+    "method": "POST",
+    "path": "/api/v1/skills/{skillId}/versions/{version}/deprecate",
+    "tag": "Skills",
+    "kind": "command",
+    "consoleRoutes": "/skills"
+  },
+  {
+    "operationId": "listPlanTemplates",
+    "method": "GET",
+    "path": "/api/v1/plan-templates",
+    "tag": "PlanTemplates",
+    "kind": "query",
+    "consoleRoutes": "/plans"
+  },
+  {
+    "operationId": "listPlanTemplateVersions",
+    "method": "GET",
+    "path": "/api/v1/plan-templates/{artifactId}/versions",
+    "tag": "PlanTemplates",
+    "kind": "query",
+    "consoleRoutes": "/plans"
+  },
+  {
+    "operationId": "getPlanTemplateVersion",
+    "method": "GET",
+    "path": "/api/v1/plan-templates/{artifactId}/versions/{version}",
+    "tag": "PlanTemplates",
+    "kind": "query",
+    "consoleRoutes": "/plans"
+  },
+  {
+    "operationId": "publishPlanTemplateVersion",
+    "method": "POST",
+    "path": "/api/v1/plan-templates/{artifactId}/versions/{version}/publish",
+    "tag": "PlanTemplates",
+    "kind": "command",
+    "consoleRoutes": "/plans"
+  },
+  {
+    "operationId": "revalidatePlanTemplateVersion",
+    "method": "POST",
+    "path": "/api/v1/plan-templates/{artifactId}/versions/{version}/revalidate",
+    "tag": "PlanTemplates",
+    "kind": "command",
+    "consoleRoutes": "/plans"
+  },
+  {
+    "operationId": "suspendPlanTemplateVersion",
+    "method": "POST",
+    "path": "/api/v1/plan-templates/{artifactId}/versions/{version}/suspend",
+    "tag": "PlanTemplates",
+    "kind": "command",
+    "consoleRoutes": "/plans"
+  },
+  {
+    "operationId": "listNodeCapabilities",
+    "method": "GET",
+    "path": "/api/v1/node-capabilities",
+    "tag": "Capabilities",
+    "kind": "query",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "createNodeCapabilityDraft",
+    "method": "POST",
+    "path": "/api/v1/node-capabilities",
+    "tag": "Capabilities",
+    "kind": "command",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "getNodeCapabilityVersion",
+    "method": "GET",
+    "path": "/api/v1/node-capabilities/{capabilityId}/versions/{version}",
+    "tag": "Capabilities",
+    "kind": "query",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "validateNodeCapabilityVersion",
+    "method": "POST",
+    "path": "/api/v1/node-capabilities/{capabilityId}/versions/{version}/validate",
+    "tag": "Capabilities",
+    "kind": "command",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "publishNodeCapabilityVersion",
+    "method": "POST",
+    "path": "/api/v1/node-capabilities/{capabilityId}/versions/{version}/publish",
+    "tag": "Capabilities",
+    "kind": "command",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "suspendNodeCapabilityVersion",
+    "method": "POST",
+    "path": "/api/v1/node-capabilities/{capabilityId}/versions/{version}/suspend",
+    "tag": "Capabilities",
+    "kind": "command",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "deprecateNodeCapabilityVersion",
+    "method": "POST",
+    "path": "/api/v1/node-capabilities/{capabilityId}/versions/{version}/deprecate",
+    "tag": "Capabilities",
+    "kind": "command",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "retireNodeCapabilityVersion",
+    "method": "POST",
+    "path": "/api/v1/node-capabilities/{capabilityId}/versions/{version}/retire",
+    "tag": "Capabilities",
+    "kind": "command",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "listCapabilityImplementations",
+    "method": "GET",
+    "path": "/api/v1/node-capabilities/{capabilityId}/versions/{version}/implementations",
+    "tag": "Capabilities",
+    "kind": "query",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "createCapabilityImplementation",
+    "method": "POST",
+    "path": "/api/v1/node-capabilities/{capabilityId}/versions/{version}/implementations",
+    "tag": "Capabilities",
+    "kind": "command",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "listCapabilityReadiness",
+    "method": "GET",
+    "path": "/api/v1/capability-readiness",
+    "tag": "Capabilities",
+    "kind": "query",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "getCapabilityReadiness",
+    "method": "GET",
+    "path": "/api/v1/capability-readiness/{capabilityId}/{version}",
+    "tag": "Capabilities",
+    "kind": "query",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "evaluateCapabilityReadiness",
+    "method": "POST",
+    "path": "/api/v1/capability-readiness/{capabilityId}/{version}/evaluate",
+    "tag": "Capabilities",
+    "kind": "command",
+    "consoleRoutes": "/capabilities · /readiness"
+  },
+  {
+    "operationId": "listA2aExposures",
+    "method": "GET",
+    "path": "/api/v1/a2a-exposures",
+    "tag": "A2A",
+    "kind": "query",
+    "consoleRoutes": "/a2a/exposures · /a2a/agent-card"
+  },
+  {
+    "operationId": "createA2aExposureDraft",
+    "method": "POST",
+    "path": "/api/v1/a2a-exposures",
+    "tag": "A2A",
+    "kind": "command",
+    "consoleRoutes": "/a2a/exposures · /a2a/agent-card"
+  },
+  {
+    "operationId": "getA2aExposureVersion",
+    "method": "GET",
+    "path": "/api/v1/a2a-exposures/{exposureId}/versions/{version}",
+    "tag": "A2A",
+    "kind": "query",
+    "consoleRoutes": "/a2a/exposures · /a2a/agent-card"
+  },
+  {
+    "operationId": "publishA2aExposureVersion",
+    "method": "POST",
+    "path": "/api/v1/a2a-exposures/{exposureId}/versions/{version}/publish",
+    "tag": "A2A",
+    "kind": "command",
+    "consoleRoutes": "/a2a/exposures · /a2a/agent-card"
+  },
+  {
+    "operationId": "suspendA2aExposureVersion",
+    "method": "POST",
+    "path": "/api/v1/a2a-exposures/{exposureId}/versions/{version}/suspend",
+    "tag": "A2A",
+    "kind": "command",
+    "consoleRoutes": "/a2a/exposures · /a2a/agent-card"
+  },
+  {
+    "operationId": "retireA2aExposureVersion",
+    "method": "POST",
+    "path": "/api/v1/a2a-exposures/{exposureId}/versions/{version}/retire",
+    "tag": "A2A",
+    "kind": "command",
+    "consoleRoutes": "/a2a/exposures · /a2a/agent-card"
+  },
+  {
+    "operationId": "listAgentCardRevisions",
+    "method": "GET",
+    "path": "/api/v1/a2a-agent-card-revisions",
+    "tag": "A2A",
+    "kind": "query",
+    "consoleRoutes": "/a2a/exposures · /a2a/agent-card"
+  },
+  {
+    "operationId": "getAgentCardRevision",
+    "method": "GET",
+    "path": "/api/v1/a2a-agent-card-revisions/{revision}",
+    "tag": "A2A",
+    "kind": "query",
+    "consoleRoutes": "/a2a/exposures · /a2a/agent-card"
+  },
+  {
+    "operationId": "rebuildAgentCardRevision",
+    "method": "POST",
+    "path": "/api/v1/a2a-agent-card-revisions/rebuild",
+    "tag": "A2A",
+    "kind": "command",
+    "consoleRoutes": "/a2a/exposures · /a2a/agent-card"
+  },
+  {
+    "operationId": "listOperationalTasks",
+    "method": "GET",
+    "path": "/api/v1/tasks",
+    "tag": "Tasks",
+    "kind": "query",
+    "consoleRoutes": "/tasks"
+  },
+  {
+    "operationId": "getOperationalTask",
+    "method": "GET",
+    "path": "/api/v1/tasks/{taskId}",
+    "tag": "Tasks",
+    "kind": "query",
+    "consoleRoutes": "/tasks"
+  },
+  {
+    "operationId": "getTaskCapabilityBinding",
+    "method": "GET",
+    "path": "/api/v1/tasks/{taskId}/capability-binding",
+    "tag": "Tasks",
+    "kind": "query",
+    "consoleRoutes": "/tasks"
+  },
+  {
+    "operationId": "pauseTask",
+    "method": "POST",
+    "path": "/api/v1/tasks/{taskId}/pause",
+    "tag": "Tasks",
+    "kind": "command",
+    "consoleRoutes": "/tasks"
+  },
+  {
+    "operationId": "resumeTask",
+    "method": "POST",
+    "path": "/api/v1/tasks/{taskId}/resume",
+    "tag": "Tasks",
+    "kind": "command",
+    "consoleRoutes": "/tasks"
+  },
+  {
+    "operationId": "cancelTask",
+    "method": "POST",
+    "path": "/api/v1/tasks/{taskId}/cancel",
+    "tag": "Tasks",
+    "kind": "command",
+    "consoleRoutes": "/tasks"
+  },
+  {
+    "operationId": "submitTaskGoalPatch",
+    "method": "POST",
+    "path": "/api/v1/tasks/{taskId}/goal-patches",
+    "tag": "Tasks",
+    "kind": "command",
+    "consoleRoutes": "/tasks"
+  },
+  {
+    "operationId": "getTelemetryExportConfiguration",
+    "method": "GET",
+    "path": "/api/v1/telemetry-export",
+    "tag": "TelemetryExport",
+    "kind": "query",
+    "consoleRoutes": "/telemetry-export"
+  },
+  {
+    "operationId": "createTelemetryExportRevision",
+    "method": "POST",
+    "path": "/api/v1/telemetry-export/revisions",
+    "tag": "TelemetryExport",
+    "kind": "command",
+    "consoleRoutes": "/telemetry-export"
+  },
+  {
+    "operationId": "validateTelemetryExportRevision",
+    "method": "POST",
+    "path": "/api/v1/telemetry-export/revisions/{revision}/validate",
+    "tag": "TelemetryExport",
+    "kind": "command",
+    "consoleRoutes": "/telemetry-export"
+  },
+  {
+    "operationId": "publishTelemetryExportRevision",
+    "method": "POST",
+    "path": "/api/v1/telemetry-export/revisions/{revision}/publish",
+    "tag": "TelemetryExport",
+    "kind": "command",
+    "consoleRoutes": "/telemetry-export"
+  },
+  {
+    "operationId": "getTelemetryExportStatus",
+    "method": "GET",
+    "path": "/api/v1/telemetry-export/status",
+    "tag": "TelemetryExport",
+    "kind": "query",
+    "consoleRoutes": "/telemetry-export"
+  },
+  {
+    "operationId": "testTelemetryExportConnection",
+    "method": "POST",
+    "path": "/api/v1/telemetry-export/test",
+    "tag": "TelemetryExport",
+    "kind": "command",
+    "consoleRoutes": "/telemetry-export"
+  },
+  {
+    "operationId": "listManagementOperations",
+    "method": "GET",
+    "path": "/api/v1/management-operations",
+    "tag": "Operations",
+    "kind": "query",
+    "consoleRoutes": "/operations"
+  },
+  {
+    "operationId": "getManagementOperation",
+    "method": "GET",
+    "path": "/api/v1/management-operations/{operationId}",
+    "tag": "Operations",
+    "kind": "query",
+    "consoleRoutes": "/operations"
+  },
+  {
+    "operationId": "cancelManagementOperation",
+    "method": "POST",
+    "path": "/api/v1/management-operations/{operationId}/cancel",
+    "tag": "Operations",
+    "kind": "command",
+    "consoleRoutes": "/operations"
+  },
+  {
+    "operationId": "listAuditEvents",
+    "method": "GET",
+    "path": "/api/v1/audit-events",
+    "tag": "Audit",
+    "kind": "query",
+    "consoleRoutes": "/audit"
+  },
+  {
+    "operationId": "subscribeNodeEvents",
+    "method": "GET",
+    "path": "/api/v1/events",
+    "tag": "Events",
+    "kind": "query",
+    "consoleRoutes": "/events"
+  }
+]

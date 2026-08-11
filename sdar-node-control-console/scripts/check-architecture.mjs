@@ -34,12 +34,16 @@ const rules = [
 ];
 const projectSpecific = ['existing-business-repository', 'internal-project-package'];
 const violations = [];
+const browserNetworkFiles = new Set(['src/gateways/HttpNodeControlGateway.ts']);
 
 for (const file of productionFiles) {
   const content = fs.readFileSync(file, 'utf8');
   for (const [rule, pattern] of rules) {
     pattern.lastIndex = 0;
-    if (pattern.test(content)) violations.push({ file: path.relative(root, file), rule });
+    const relative = path.relative(root, file).replaceAll('\\', '/');
+    if (pattern.test(content) && !(rule === 'network request primitive' && browserNetworkFiles.has(relative))) {
+      violations.push({ file: path.relative(root, file), rule });
+    }
   }
   for (const token of projectSpecific) if (content.includes(token)) violations.push({ file: path.relative(root, file), rule: 'project-specific reference' });
 }
@@ -51,7 +55,8 @@ const report = {
   boundaries: {
     contractPathsAreMetadata: true,
     deterministicFixtureEndpointsAllowed: true,
-    runtimeNetworkDependency: false,
+    sameOriginBffNetwork: true,
+    directUpstreamNetwork: false,
     browserPersistence: false,
     authenticationImplementation: false,
     backendService: false,

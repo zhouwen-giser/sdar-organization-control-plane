@@ -3,6 +3,7 @@ import type { ContractOperation } from '../api/generated/contract';
 import type { CommandInput, CommandReceipt, ConsoleErrorShape, ConsoleRecord, RecordKind, RoleId, ScenarioId } from '../domain';
 import { nodeControlGateway } from '../gateways/factory';
 import { canInvoke } from '../gateways/operationPolicy';
+import { getConsoleRuntimeConfig, type ConsoleGatewayMode } from '../runtime-config';
 
 interface QueryState<T> {
   data?: T;
@@ -13,6 +14,8 @@ interface QueryState<T> {
 
 interface ConsoleContextValue {
   role: RoleId;
+  gatewayMode: ConsoleGatewayMode;
+  securityClassification: string;
   scenario: ScenarioId;
   setRole(role: RoleId): void;
   setScenario(scenario: ScenarioId): void;
@@ -25,9 +28,14 @@ interface ConsoleContextValue {
 const ConsoleContext = createContext<ConsoleContextValue | null>(null);
 
 export function ConsoleProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<RoleId>('node_admin');
+  const runtimeConfig = getConsoleRuntimeConfig();
+  const [roleState, setRoleState] = useState<RoleId>(runtimeConfig.activeDeploymentRole ?? 'node_admin');
   const [scenario, updateScenario] = useState<ScenarioId>('healthy');
   const [toast, setToast] = useState<ConsoleContextValue['toast']>();
+
+  const setRole = useCallback((next: RoleId) => {
+    if (runtimeConfig.gatewayMode === 'mock') setRoleState(next);
+  }, [runtimeConfig.gatewayMode]);
 
   const setScenario = useCallback((next: ScenarioId) => {
     updateScenario(next);
@@ -47,10 +55,11 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<ConsoleContextValue>(() => ({
-    role, scenario, setRole, setScenario, execute,
-    canInvoke: (operation) => canInvoke(role, operation),
+    role: roleState, gatewayMode: runtimeConfig.gatewayMode, securityClassification: runtimeConfig.securityClassification,
+    scenario, setRole, setScenario, execute,
+    canInvoke: (operation) => canInvoke(roleState, operation),
     toast, clearToast: () => setToast(undefined),
-  }), [role, scenario, setScenario, execute, toast]);
+  }), [roleState, runtimeConfig.gatewayMode, runtimeConfig.securityClassification, scenario, setRole, setScenario, execute, toast]);
 
   return <ConsoleContext.Provider value={value}>{children}</ConsoleContext.Provider>;
 }

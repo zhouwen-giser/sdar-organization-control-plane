@@ -52,7 +52,7 @@ const scenarioLabels: Record<ScenarioId, string> = {
 };
 
 export function AppShell({ route, children }: { route: RouteMatch; children: ReactNode }) {
-  const { role, scenario, setRole, setScenario, toast, clearToast } = useConsole();
+  const { role, gatewayMode, securityClassification, scenario, setRole, setScenario, toast, clearToast } = useConsole();
   const snapshot = useGatewaySnapshot();
   const [navOpen, setNavOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -74,8 +74,12 @@ export function AppShell({ route, children }: { route: RouteMatch; children: Rea
         <div className="page-identity"><div className="breadcrumbs"><span>控制台</span>{breadcrumbs.map((item) => <span key={item}><ChevronRight size={12} />{item}</span>)}</div><h1>{route.title}</h1></div>
         <div className="topbar-tools">
           <label className="global-search"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && runSearch()} placeholder="搜索协议 Operation" /></label>
-          <label className="compact-select"><span>角色</span><select value={role} onChange={(event) => setRole(event.target.value as RoleId)}>{Object.entries(ROLE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-          <label className="compact-select"><span>场景</span><select value={scenario} onChange={(event) => setScenario(event.target.value as ScenarioId)}>{Object.entries(scenarioLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          {gatewayMode === 'live'
+            ? <div className="deployment-identity" aria-label="Active Deployment Identity"><span>Active Deployment Identity</span><strong>{ROLE_LABELS[role]}</strong><small>{securityClassification}</small></div>
+            : <>
+              <label className="compact-select"><span>角色</span><select value={role} onChange={(event) => setRole(event.target.value as RoleId)}>{Object.entries(ROLE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <label className="compact-select"><span>场景</span><select value={scenario} onChange={(event) => setScenario(event.target.value as ScenarioId)}>{Object.entries(scenarioLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            </>}
         </div>
       </header>
       <div className="content">{children}</div>

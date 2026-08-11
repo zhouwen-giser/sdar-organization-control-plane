@@ -66,11 +66,11 @@ No product implementation was changed in P00. Only baseline evidence and Goal St
 ## Commits
 
 - implementation: not applicable for baseline-only P00
-- evidence: pending this phase commit
+- evidence: `15e592dd78bd4c679454f992aaa86bbf9bb251bd`
 
 ## Remote Verification
 
-Pending phase commit, push and local/remote SHA equality verification.
+`15e592dd78bd4c679454f992aaa86bbf9bb251bd` was pushed to `origin/feature/single-node-console-live-integration`; `git ls-remote` matched the local commit exactly.
 
 ## Remaining Risks
 

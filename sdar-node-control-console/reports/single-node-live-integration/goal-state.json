@@ -11,9 +11,10 @@
   "phases": {
     "P00": {
       "status": "P00_COMPLETE",
+      "evidenceCommit": "15e592dd78bd4c679454f992aaa86bbf9bb251bd",
       "report": "reports/single-node-live-integration/P00-baseline.md"
     }
   },
   "externalBlockers": [],
-  "updatedAt": "2026-08-11T23:11:32.691Z"
+  "updatedAt": "2026-08-11T23:15:30.000Z"
 }

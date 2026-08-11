@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-11T23:11:32.691Z",
+  "consoleBaseline": {
+    "sha": "52ee82f336ed221dcd85c4921c345898a5b8b29c",
+    "manifestSha256": "29cdddba8d8ee3986efcd20681f9ea593f1eb5fb2e4410ec755cd0788472c00e",
+    "openApiSha256": "168c4e55db2b47db03e9e3978c1d32494425b12c487cd91019a9d6b2bf318e49",
+    "operationInventorySha256": "507b2fdd913696fbb946a1f06b57325b315a59bbe11f2a99ca0ebe4889555c57",
+    "publicOperations": 85,
+    "internalOperations": 26,
+    "schemas": 28,
+    "exportContract": "telemetryExport/1.0.0"
+  },
+  "selectedSdarBaseline": {
+    "branch": "codex/sdar-smpp-home-lab-integration",
+    "sha": "816f25f86910a94cba260e9f84e98de92074b75f",
+    "manifestSha256": "5aaaa7e6973cebd9914557fa4be40c27a16065bb88d88d99f222a256a7364a03",
+    "openApiSha256": "870a7451b84410fe6979ac2e773dd42ba63e545dfe45899afc493b56010a6fde",
+    "operationInventorySha256": "150e74baa085a965fd7130d334d858c6af14d816ff4c3ce6ba199b0f9ce81c3e",
+    "publicOperations": 94,
+    "internalOperations": 37,
+    "schemas": 29,
+    "exportContract": "sdar.evidence/v1"
+  },
+  "operationDelta": {
+    "added": 15,
+    "removed": 6,
+    "netPublicOperations": 9,
+    "semanticReplacements": [
+      ["getTelemetryExportConfiguration", "getEvidenceExportConfiguration"],
+      ["createTelemetryExportRevision", "createEvidenceExportRevision"],
+      ["validateTelemetryExportRevision", "validateEvidenceExportRevision"],
+      ["publishTelemetryExportRevision", "publishEvidenceExportRevision"],
+      ["getTelemetryExportStatus", "getEvidenceExportStatus"],
+      ["testTelemetryExportConnection", "testEvidenceExportConnection"]
+    ],
+    "newEvidenceOperations": [
+      "getEpisodeEvidenceManifest",
+      "listEvidenceDeadLetters",
+      "listEvidenceOutbox",
+      "listEvidenceProjectionIssues",
+      "listEvidenceQualityIssues",
+      "listEvidenceSourceCheckpoints",
+      "reconcileEvidenceCoverage",
+      "replayEvidence",
+      "retryEvidenceDeadLetter"
+    ]
+  },
+  "requiredFindings": {
+    "mockGatewayOnlyFactory": {
+      "observed": true,
+      "evidence": "src/gateways/factory.ts instantiates MockNodeControlGateway directly"
+    },
+    "realApiConnected": {
+      "observed": false,
+      "evidence": "TEST_EVIDENCE.json explicitly records realApiConnected=false"
+    },
+    "authenticationImplemented": {
+      "observed": false,
+      "evidence": "KNOWN_LIMITATIONS.md and TEST_EVIDENCE.json state that auth/session integration is absent"
+    },
+    "deploymentRoleAuthority": {
+      "observed": false,
+      "evidence": "UI role selection is local logical scope filtering, not a trusted BFF/session-derived deployment role"
+    },
+    "exportModelCurrent": {
+      "observed": false,
+      "evidence": "Console routes, DTOs, UI and gateway remain Telemetry Export while the selected SDAR contract is Evidence Export"
+    },
+    "lastAcknowledgedSequenceTypeCurrent": {
+      "observed": false,
+      "consoleType": "number",
+      "requiredType": "decimal string",
+      "evidence": "src/api/generated/contract.ts and src/domain.ts use number; evidence-export-status.schema.json requires a decimal string"
+    },
+    "realSseConnected": {
+      "observed": false,
+      "evidence": "KNOWN_LIMITATIONS.md states Node Events are locally simulated"
+    },
+    "etagPreserved": {
+      "observed": false,
+      "evidence": "NodeControlGateway list/get return only domain records and expose no response metadata/ETag"
+    }
+  },
+  "baselineValidation": {
+    "command": "npm.cmd run validate",
+    "exitCode": 1,
+    "firstFailingGate": "contract:check",
+    "message": "Generated contract DTO is stale. Run npm run contract:generate and commit the result.",
+    "classification": "expected_contract_drift_to_be_repaired_in_P01"
+  }
+}

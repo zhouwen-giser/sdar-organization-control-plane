@@ -1,0 +1,19 @@
+{
+  "goalId": "SDAR-SINGLE-NODE-CONSOLE-LIVE-INTEGRATION",
+  "status": "P00_COMPLETE",
+  "implementationRepo": "zhouwen-giser/sdar-organization-control-plane",
+  "branch": "feature/single-node-console-live-integration",
+  "sourceLocks": {
+    "console": "52ee82f336ed221dcd85c4921c345898a5b8b29c",
+    "sdar": "816f25f86910a94cba260e9f84e98de92074b75f",
+    "smpp": "99302cf8d7871b677147c39530701790f8b7a051"
+  },
+  "phases": {
+    "P00": {
+      "status": "P00_COMPLETE",
+      "report": "reports/single-node-live-integration/P00-baseline.md"
+    }
+  },
+  "externalBlockers": [],
+  "updatedAt": "2026-08-11T23:11:32.691Z"
+}

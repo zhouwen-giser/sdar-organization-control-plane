@@ -67,11 +67,11 @@ No SDAR or SMPP defect was found. The generator incompatibility belonged to the 
 ## Commits
 
 - implementation: `032c5df44b126d1bf6d593aa68fcbb3aa8bb2e07`
-- evidence: pending this phase evidence commit
+- evidence: `7d0a5f3031cb59da53c76c023931f17f07db15a2`
 
 ## Remote Verification
 
-Pending evidence commit, push and local/remote SHA equality verification.
+Implementation and evidence commits were pushed to `origin/feature/single-node-console-live-integration`; `git ls-remote` matched local SHA `7d0a5f3031cb59da53c76c023931f17f07db15a2` exactly.
 
 ## Remaining Risks
 

@@ -17,9 +17,10 @@
     "P01": {
       "status": "CONTRACT_CURRENT",
       "implementationCommit": "032c5df44b126d1bf6d593aa68fcbb3aa8bb2e07",
+      "evidenceCommit": "7d0a5f3031cb59da53c76c023931f17f07db15a2",
       "report": "reports/single-node-live-integration/P01-contract-current.md"
     }
   },
   "externalBlockers": [],
-  "updatedAt": "2026-08-11T23:26:55.706Z"
+  "updatedAt": "2026-08-11T23:29:20.000Z"
 }

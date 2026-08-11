@@ -23,9 +23,10 @@
     "P02": {
       "status": "LIVE_TRANSPORT_READY",
       "implementationCommit": "347cad295c5691e07637ad40ab55ff789d86fc16",
+      "evidenceCommit": "83a42713fa65fce2ade300d2a2fdc0340a6a44d3",
       "report": "reports/single-node-live-integration/P02-live-transport-ready.md"
     }
   },
   "externalBlockers": [],
-  "updatedAt": "2026-08-11T23:49:30.000Z"
+  "updatedAt": "2026-08-11T23:51:00.000Z"
 }

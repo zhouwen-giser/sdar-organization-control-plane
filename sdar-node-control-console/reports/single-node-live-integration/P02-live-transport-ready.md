@@ -77,6 +77,11 @@ No SDAR or SMPP product defect was found in P02. The two repositories remained r
 ## Commits
 
 - implementation: `347cad295c5691e07637ad40ab55ff789d86fc16`
+- evidence: `83a42713fa65fce2ade300d2a2fdc0340a6a44d3`
+
+## Remote Verification
+
+Implementation and evidence commits were pushed to `origin/feature/single-node-console-live-integration`; `git ls-remote` matched the evidence commit `83a42713fa65fce2ade300d2a2fdc0340a6a44d3` exactly before phase closure.
 
 ## Remaining Risks
 

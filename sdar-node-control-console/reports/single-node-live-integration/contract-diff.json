@@ -82,6 +82,22 @@
       "evidence": "NodeControlGateway list/get return only domain records and expose no response metadata/ETag"
     }
   },
+  "p01Migration": {
+    "status": "CONTRACT_CURRENT",
+    "implementationCommit": "032c5df44b126d1bf6d593aa68fcbb3aa8bb2e07",
+    "syncedFiles": 77,
+    "sourceTreeHashMismatches": 0,
+    "publicOperationsAccounted": 94,
+    "classificationCounts": {
+      "UNCHANGED": 79,
+      "RENAMED": 6,
+      "NEW": 9
+    },
+    "generatedSchemas": 29,
+    "openApiSha256": "870a7451b84410fe6979ac2e773dd42ba63e545dfe45899afc493b56010a6fde",
+    "runtimeControlBrowserSurface": false,
+    "lastAcknowledgedSequenceType": "string"
+  },
   "baselineValidation": {
     "command": "npm.cmd run validate",
     "exitCode": 1,

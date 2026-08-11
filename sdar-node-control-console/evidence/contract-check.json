@@ -2,8 +2,8 @@
   "ok": true,
   "contractVersion": "1.0.0",
   "contractStatus": "PROTOCOL_DESIGN_FROZEN_IMPLEMENTATION_PENDING",
-  "publicOperationCount": 85,
-  "schemaCount": 28,
-  "nodeControlOpenApiSha256": "d4693a3c38ac0449e63804804fcdcea93c8fbf154fa1e7959806afc1c7652394",
-  "generatedFile": "src/api/generated/contract.ts"
+  "publicOperationCount": 94,
+  "schemaCount": 29,
+  "nodeControlOpenApiSha256": "870a7451b84410fe6979ac2e773dd42ba63e545dfe45899afc493b56010a6fde",
+  "generatedFile": "src\\api\\generated\\contract.ts"
 }

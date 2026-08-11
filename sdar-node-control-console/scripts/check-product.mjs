@@ -37,7 +37,11 @@ if (routePatterns.length < 50) violations.push({ file: 'src/routes.ts', rule: `r
 if (routePatterns.length !== uniqueRoutes.size) violations.push({ file: 'src/routes.ts', rule: 'duplicate public path' });
 const contractSource = fs.readFileSync(path.join(src, 'api/generated/contract.ts'), 'utf8');
 const operationIds = [...contractSource.matchAll(/"operationId":\s*"([^"]+)"/g)].map((match) => match[1]);
-if (operationIds.length !== 85 || new Set(operationIds).size !== 85) violations.push({ file: 'src/api/generated/contract.ts', rule: `expected 85 unique operations, received ${operationIds.length}` });
+const manifest = JSON.parse(fs.readFileSync(path.join(root, 'contracts/node-control/v1.0.0/MANIFEST.json'), 'utf8'));
+const expectedOperationCount = manifest.counts.publicOperations;
+if (operationIds.length !== expectedOperationCount || new Set(operationIds).size !== expectedOperationCount) {
+  violations.push({ file: 'src/api/generated/contract.ts', rule: `expected ${expectedOperationCount} unique operations, received ${operationIds.length}` });
+}
 const report = {
   ok: violations.length === 0,
   checkedAt: new Date().toISOString(),

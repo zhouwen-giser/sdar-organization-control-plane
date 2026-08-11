@@ -16,6 +16,18 @@ if (before !== after) {
   process.exit(1);
 }
 const inventory = fs.readFileSync(path.join(contractRoot, 'matrices/operation-inventory.csv'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/).slice(1).filter(Boolean);
+const coveragePath = path.join(root, 'reports/single-node-live-integration/operation-coverage.csv');
+if (!fs.existsSync(coveragePath)) {
+  console.error('Operation coverage is missing. Run npm run contract:coverage and commit the result.');
+  process.exit(1);
+}
+const coverage = fs.readFileSync(coveragePath, 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/).slice(1).filter(Boolean);
+const inventoryIds = new Set(inventory.map((line) => line.split(',')[0]));
+const coverageIds = new Set(coverage.map((line) => line.split(',')[0]));
+if (coverage.length !== inventory.length || coverageIds.size !== inventoryIds.size || [...inventoryIds].some((id) => !coverageIds.has(id))) {
+  console.error('Operation coverage is stale. Run npm run contract:coverage and commit the result.');
+  process.exit(1);
+}
 const schemaCount = fs.readdirSync(path.join(contractRoot, 'schemas')).filter((file) => file.endsWith('.schema.json')).length;
 const openapi = fs.readFileSync(path.join(contractRoot, 'openapi/node-control.openapi.yaml'));
 const sha256 = crypto.createHash('sha256').update(openapi).digest('hex');

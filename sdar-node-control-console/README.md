@@ -4,7 +4,7 @@
 
 ## 产品范围
 
-控制台覆盖节点档案与健康、配置 Revision、LLM Provider、模型路由、SMPP Source、MCP Candidate/Binding、Skill、Plan Template、Node Capability、Readiness、A2A Exposure、Agent Card、Runtime Task、Telemetry Export、Management Operation、Audit、Node Events、RBAC 与协议追踪。
+控制台覆盖节点档案与健康、配置 Revision、LLM Provider、模型路由、SMPP Source、MCP Candidate/Binding、Skill、Plan Template、Node Capability、Readiness、A2A Exposure、Agent Card、Runtime Task、Evidence Export、Management Operation、Audit、Node Events、RBAC 与协议追踪。
 
 冻结后台当前状态为 `PROTOCOL_DESIGN_FROZEN_IMPLEMENTATION_PENDING`，因此本交付默认运行在可重复的 **Contract-first Local Validation Mode**：
 

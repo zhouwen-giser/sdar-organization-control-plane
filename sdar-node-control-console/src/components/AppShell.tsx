@@ -34,7 +34,7 @@ const navigation = [
     { label: 'A2A 暴露', path: '/a2a/exposures', icon: Network },
     { label: 'Agent Card', path: '/a2a/agent-card', icon: Bot },
     { label: '运行任务', path: '/tasks', icon: Activity },
-    { label: 'Telemetry Export', path: '/telemetry-export', icon: FileJson },
+    { label: 'Evidence Export', path: '/evidence-export', icon: FileJson },
   ] },
   { label: '运维审计', items: [
     { label: 'Management Operation', path: '/operations', icon: FileClock },

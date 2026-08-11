@@ -101,7 +101,7 @@ const screenshotRoutes = [
   ['/overview', 'overview-1440x900.png'], ['/node/health', 'node-health.png'], ['/configuration/runtime-policy/7', 'configuration-revision.png'],
   ['/llm/providers', 'llm-providers.png'], ['/smpp/sources/smpp-main', 'smpp-source-detail.png'], ['/mcp/bindings/mcp-weather', 'mcp-binding-detail.png'],
   ['/skills', 'skills.png'], ['/capabilities/cap-route-planning/1', 'capability-detail.png'], ['/readiness', 'readiness.png'],
-  ['/a2a/exposures', 'a2a-exposures.png'], ['/tasks/task-20260731-1042', 'task-detail.png'], ['/telemetry-export', 'telemetry-export.png'],
+  ['/a2a/exposures', 'a2a-exposures.png'], ['/tasks/task-20260731-1042', 'task-detail.png'], ['/evidence-export', 'evidence-export.png'],
   ['/operations', 'operations.png'], ['/audit', 'audit.png'], ['/events', 'events.png'], ['/access', 'rbac.png'], ['/contract', 'contract-traceability.png'],
   ['/404-check', '404.png'],
 ];

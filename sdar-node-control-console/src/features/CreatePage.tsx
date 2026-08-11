@@ -13,7 +13,7 @@ const FIELDS: Partial<Record<RecordKind, FieldSpec[]>> = {
   configuration: [
     { key: 'configurationId', label: 'Configuration ID', placeholder: 'runtime-policy' },
     { key: 'name', label: '显示名称', placeholder: 'Runtime 执行策略' },
-    { key: 'targetType', label: '目标类型', placeholder: 'runtime', type: 'select', options: ['node', 'runtime', 'task_policy', 'telemetry_export'] },
+    { key: 'targetType', label: '目标类型', placeholder: 'runtime', type: 'select', options: ['node', 'runtime', 'task_policy', 'evidence_export'] },
     { key: 'targetId', label: '目标 ID', placeholder: 'runtime-primary' },
     { key: 'applyMode', label: '应用模式', placeholder: 'hot_reload', type: 'select', options: ['hot_reload', 'new_task_only', 'reconnect_required', 'restart_required', 'immutable'] },
     { key: 'content', label: '配置内容（JSON）', placeholder: '{\n  "maxConcurrentTasks": 4\n}', type: 'textarea' },

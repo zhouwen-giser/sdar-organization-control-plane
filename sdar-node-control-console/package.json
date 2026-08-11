@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "contract:generate": "node scripts/generate-contract.mjs",
+    "contract:coverage": "node scripts/generate-operation-coverage.mjs",
     "contract:check": "node scripts/check-contract.mjs",
     "typecheck": "tsc --noEmit",
     "check:architecture": "node scripts/check-architecture.mjs",

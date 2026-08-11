@@ -43,8 +43,9 @@ describe('single-node console product experience', () => {
 
   it('renders all operations in the traceability page', () => {
     renderAt('/contract');
-    expect(screen.getByText('85')).toBeInTheDocument();
+    expect(screen.getByText('94')).toBeInTheDocument();
     expect(screen.getByText('getNodeProfile')).toBeInTheDocument();
     expect(screen.getByText('publishConfigurationRevision')).toBeInTheDocument();
+    expect(screen.getByText('reconcileEvidenceCoverage')).toBeInTheDocument();
   });
 });

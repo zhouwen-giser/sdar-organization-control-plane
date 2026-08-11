@@ -1,10 +1,12 @@
 # Contract Mapping Report
 
-- Public Node Control Operation Inventory: 85/85 mapped
-- Total operation IDs validated by the frozen package, including internal Runtime Control: 111
-- JSON Schemas: 28/28 generated
-- RBAC roles: 7
-- Node Control OpenAPI SHA-256: `d4693a3c38ac0449e63804804fcdcea93c8fbf154fa1e7959806afc1c7652394`
-- Runtime Control OpenAPI SHA-256: `09796b7cdc9e05c0ec990485d23e1045c679e7d87c662db6bf7618ca32a91177`
+- Selected SDAR source: `codex/sdar-smpp-home-lab-integration@816f25f86910a94cba260e9f84e98de92074b75f`
+- Public Node Control Operation Inventory: 94/94 classified
+- Total operation IDs validated by the frozen package, including internal Runtime Control: 131
+- JSON Schemas: 29/29 generated
+- RBAC roles: 11
+- Node Control OpenAPI SHA-256: `870a7451b84410fe6979ac2e773dd42ba63e545dfe45899afc493b56010a6fde`
+- Runtime Control OpenAPI SHA-256: `d9f250a8f057eab5d9d5dc77088faf0fc525835804f8f3ad8fdb7fca18e66aba`
+- Operation classification: 79 unchanged, 6 renamed from Telemetry Export, 9 new Evidence operations
 
-The frontend does not call Runtime Control operations. Their presence is retained only as frozen authority-boundary documentation.
+The browser/BFF must not call Runtime Control operations. Their presence is retained only as frozen authority-boundary documentation. Exact per-operation disposition is recorded in `reports/single-node-live-integration/operation-coverage.csv`.

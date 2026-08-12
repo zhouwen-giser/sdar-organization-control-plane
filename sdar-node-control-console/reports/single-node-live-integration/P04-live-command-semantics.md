@@ -71,6 +71,11 @@ These transport/failure cases use deterministic HTTP fixtures in the Console tes
 
 `ecd1b8b0c6143a3e2e855a82366d3d0440cd23b4`
 
+## Evidence Commit and Remote Verification
+
+- Evidence commit: `c7c4502592834abccb933338b136b1396729a4df`
+- The remote feature branch matched this evidence commit exactly before phase closure.
+
 ## Remaining Work
 
 - P05 will turn Node Events into reconnectable hints followed by authoritative GET refreshes.

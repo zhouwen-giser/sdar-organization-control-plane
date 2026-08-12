@@ -75,6 +75,11 @@ The production build was opened at `http://127.0.0.1:4188/#/events` through the 
 
 `efb3611950049ac79f25d0998ae5f377c91a3f45`
 
+## Evidence Commit and Remote Verification
+
+- Evidence commit: `3850e78897b5e024333eb17382b50ca386f6efe4`
+- The remote feature branch matched this evidence commit exactly before phase closure.
+
 ## Remaining Work
 
 - P06 begins resource-specific Configuration workflows on top of the now-live read, command and event transport.

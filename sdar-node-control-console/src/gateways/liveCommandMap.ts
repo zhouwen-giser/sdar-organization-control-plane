@@ -1,4 +1,4 @@
-import type { CommandInput } from '../domain';
+import type { CommandInput, RecordKind } from '../domain';
 import { ConsoleError } from '../domain';
 
 const CONFIGURATION_OPERATIONS = new Set([
@@ -22,6 +22,16 @@ const SUPPLY_OPERATIONS = new Set([
   'createSmppSourceDraft', 'syncSmppSource', 'importMcpProviderBinding',
   'refreshMcpProviderBinding', 'suspendMcpProviderBinding', 'removeMcpProviderBinding',
 ]);
+const CAPABILITY_OPERATIONS = new Set([
+  'createNodeCapabilityDraft', 'validateNodeCapabilityVersion', 'publishNodeCapabilityVersion',
+  'suspendNodeCapabilityVersion', 'deprecateNodeCapabilityVersion', 'retireNodeCapabilityVersion',
+  'createCapabilityImplementation',
+]);
+const A2A_OPERATIONS = new Set([
+  'createA2aExposureDraft', 'publishA2aExposureVersion', 'suspendA2aExposureVersion',
+  'retireA2aExposureVersion', 'rebuildAgentCardRevision',
+]);
+const TASK_OPERATIONS = new Set(['pauseTask', 'resumeTask', 'cancelTask', 'submitTaskGoalPatch']);
 export const REQUIRED_EVIDENCE_FAMILIES = [
   'runtime', 'skill', 'mcp_task', 'capability', 'experience', 'replay', 'artifact', 'node_control', 'evidence',
 ] as const;
@@ -32,11 +42,11 @@ export interface LiveCommandMapping {
   body: unknown;
   currentResourcePath?: string;
   responseKind?: 'configuration' | 'evidenceConfiguration' | 'record' | 'operation';
-  recordKind?: 'llmProvider' | 'modelRoute' | 'smppSource';
+  recordKind?: RecordKind;
 }
 
 export async function mapLiveCommand(input: CommandInput): Promise<LiveCommandMapping> {
-  if (!CONFIGURATION_OPERATIONS.has(input.operation.operationId) && input.operation.operationId !== READINESS_OPERATION && !EVIDENCE_OPERATIONS.has(input.operation.operationId) && !SUPPLY_OPERATIONS.has(input.operation.operationId)) {
+  if (!CONFIGURATION_OPERATIONS.has(input.operation.operationId) && input.operation.operationId !== READINESS_OPERATION && !EVIDENCE_OPERATIONS.has(input.operation.operationId) && !SUPPLY_OPERATIONS.has(input.operation.operationId) && !CAPABILITY_OPERATIONS.has(input.operation.operationId) && !A2A_OPERATIONS.has(input.operation.operationId) && !TASK_OPERATIONS.has(input.operation.operationId)) {
     throw new ConsoleError({
       status: 501,
       code: 'CONSOLE_LIVE_COMMAND_NOT_MAPPED',
@@ -49,6 +59,9 @@ export async function mapLiveCommand(input: CommandInput): Promise<LiveCommandMa
 
   if (EVIDENCE_OPERATIONS.has(input.operation.operationId)) return evidenceCommand(input);
   if (SUPPLY_OPERATIONS.has(input.operation.operationId)) return supplyCommand(input);
+  if (CAPABILITY_OPERATIONS.has(input.operation.operationId)) return capabilityCommand(input);
+  if (A2A_OPERATIONS.has(input.operation.operationId)) return a2aCommand(input);
+  if (TASK_OPERATIONS.has(input.operation.operationId)) return taskCommand(input);
 
   if (input.operation.operationId === READINESS_OPERATION) {
     const separator = input.target.id.lastIndexOf('@');
@@ -89,6 +102,140 @@ export async function mapLiveCommand(input: CommandInput): Promise<LiveCommandMa
       expectedRevision: input.expectedRevision ?? revision,
     },
     responseKind: input.operation.operationId === 'validateConfigurationRevision' ? 'configuration' : 'operation',
+  };
+}
+
+async function capabilityCommand(input: CommandInput): Promise<LiveCommandMapping> {
+  const operationId = input.operation.operationId;
+  if (operationId === 'createNodeCapabilityDraft') {
+    const payload = input.payload ?? {};
+    const capabilityId = requiredText(payload.capabilityId ?? payload.id ?? input.target.id, 'capabilityId');
+    const version = positiveInteger(payload.version, 1, 'version');
+    const inputSchema = jsonObject(payload.inputSchema, 'inputSchema');
+    const outputSchema = jsonObject(payload.outputSchema, 'outputSchema');
+    const successCriteria = jsonObjectArray(payload.successCriteria, 'successCriteria', true);
+    const requiredEvidence = jsonObjectArray(payload.requiredEvidence, 'requiredEvidence', true);
+    const effects = textArray(payload.effects);
+    const artifacts = textArray(payload.artifacts);
+    const constraints = jsonObjectArray(payload.constraints, 'constraints');
+    const supportedModes = textArray(payload.supportedModes);
+    const previousVersion = optionalPositiveInteger(payload.previousVersion, 'previousVersion');
+    const body = {
+      capabilityId,
+      version,
+      domain: requiredText(payload.domain, 'domain'),
+      name: requiredText(payload.name, 'name'),
+      description: requiredText(payload.description, 'description'),
+      inputSchema,
+      outputSchema,
+      successCriteria,
+      requiredEvidence,
+      effects,
+      artifacts,
+      constraints,
+      supportedModes,
+      riskLevel: requiredText(payload.riskLevel, 'riskLevel'),
+      status: 'draft',
+      ...(previousVersion === undefined ? {} : { previousVersion }),
+    };
+    const definitionHash = await sha256(canonicalJson({
+      capabilityId, version, domain: body.domain, name: body.name, description: body.description,
+      inputSchema, outputSchema, successCriteria, requiredEvidence, effects, artifacts, constraints,
+      supportedModes, riskLevel: body.riskLevel, previousVersion: previousVersion ?? null,
+    }));
+    return { method: input.operation.method, path: input.operation.path, body: { ...body, definitionHash }, responseKind: 'record', recordKind: 'capability' };
+  }
+  const { resourceId: capabilityId, version } = versionedIdentity(input, 'Capability');
+  const path = input.operation.path
+    .replace('{capabilityId}', encodeURIComponent(capabilityId))
+    .replace('{version}', String(version));
+  if (operationId === 'createCapabilityImplementation') {
+    const payload = input.payload ?? {};
+    return {
+      method: input.operation.method,
+      path,
+      body: {
+        bindingId: requiredText(payload.bindingId, 'bindingId'),
+        capabilityId,
+        capabilityVersion: version,
+        implementationType: requiredText(payload.implementationType, 'implementationType'),
+        implementationId: requiredText(payload.implementationId, 'implementationId'),
+        implementationVersion: requiredText(payload.implementationVersion, 'implementationVersion'),
+        role: requiredText(payload.role ?? 'primary', 'role'),
+        priority: nonNegativeInteger(payload.priority, 0, 'priority'),
+        ...(payload.activationCondition === undefined || payload.activationCondition === '' ? {} : { activationCondition: jsonValue(payload.activationCondition, 'activationCondition') }),
+        ...(payload.providerPolicyOverride === undefined || payload.providerPolicyOverride === '' ? {} : { providerPolicyOverride: jsonValue(payload.providerPolicyOverride, 'providerPolicyOverride') }),
+        status: requiredText(payload.status ?? 'active', 'status'),
+        revision: positiveInteger(payload.revision, 1, 'revision'),
+      },
+    };
+  }
+  return {
+    method: input.operation.method,
+    path,
+    currentResourcePath: `/api/v1/node-capabilities/${encodeURIComponent(capabilityId)}/versions/${String(version)}`,
+    body: { reason: requiredText(input.reason, 'reason') },
+    responseKind: operationId === 'validateNodeCapabilityVersion' ? 'record' : 'operation',
+    ...(operationId === 'validateNodeCapabilityVersion' ? { recordKind: 'capability' as const } : {}),
+  };
+}
+
+async function a2aCommand(input: CommandInput): Promise<LiveCommandMapping> {
+  const operationId = input.operation.operationId;
+  if (operationId === 'rebuildAgentCardRevision') {
+    return { method: input.operation.method, path: input.operation.path, body: { reason: requiredText(input.reason, 'reason') }, responseKind: 'operation' };
+  }
+  if (operationId === 'createA2aExposureDraft') {
+    const payload = input.payload ?? {};
+    const exposureId = requiredText(payload.exposureId ?? payload.id ?? input.target.id, 'exposureId');
+    const version = positiveInteger(payload.version, 1, 'version');
+    const requestSchema = jsonObject(payload.requestSchema, 'requestSchema');
+    const resultSchema = jsonObject(payload.resultSchema, 'resultSchema');
+    const requesterPolicy = payload.requesterPolicy === undefined || payload.requesterPolicy === '' ? undefined : jsonObject(payload.requesterPolicy, 'requesterPolicy');
+    const body = {
+      exposureId,
+      version,
+      capabilityId: requiredText(payload.capabilityId, 'capabilityId'),
+      capabilityVersion: positiveInteger(payload.capabilityVersion, 1, 'capabilityVersion'),
+      agentSkillId: requiredText(payload.agentSkillId, 'agentSkillId'),
+      name: requiredText(payload.name, 'name'),
+      description: requiredText(payload.description, 'description'),
+      tags: textArray(payload.tags),
+      examples: textArray(payload.examples),
+      inputModes: textArray(payload.inputModes),
+      outputModes: textArray(payload.outputModes),
+      requestSchema,
+      resultSchema,
+      visibility: requiredText(payload.visibility, 'visibility'),
+      ...(requesterPolicy === undefined ? {} : { requesterPolicy }),
+      readinessPublicationPolicy: requiredText(payload.readinessPublicationPolicy ?? 'publish_when_available', 'readinessPublicationPolicy'),
+      status: 'draft',
+    };
+    const exposureHash = await sha256(canonicalJson({
+      exposureId, version, capabilityId: body.capabilityId, capabilityVersion: body.capabilityVersion,
+      agentSkillId: body.agentSkillId, name: body.name, description: body.description, tags: body.tags,
+      examples: body.examples, inputModes: body.inputModes, outputModes: body.outputModes,
+      requestSchema, resultSchema, visibility: body.visibility, requesterPolicy: requesterPolicy ?? {},
+      readinessPublicationPolicy: body.readinessPublicationPolicy,
+    }));
+    return { method: input.operation.method, path: input.operation.path, body: { ...body, exposureHash }, responseKind: 'record', recordKind: 'a2aExposure' };
+  }
+  const { resourceId: exposureId, version } = versionedIdentity(input, 'A2A Exposure');
+  return {
+    method: input.operation.method,
+    path: input.operation.path.replace('{exposureId}', encodeURIComponent(exposureId)).replace('{version}', String(version)),
+    currentResourcePath: `/api/v1/a2a-exposures/${encodeURIComponent(exposureId)}/versions/${String(version)}`,
+    body: { reason: requiredText(input.reason, 'reason') },
+    responseKind: 'operation',
+  };
+}
+
+function taskCommand(input: CommandInput): LiveCommandMapping {
+  return {
+    method: input.operation.method,
+    path: input.operation.path.replace('{taskId}', encodeURIComponent(requiredText(input.target.id, 'taskId'))),
+    body: { reason: requiredText(input.reason, 'reason'), ...(input.payload === undefined ? {} : { payload: input.payload }) },
+    responseKind: 'operation',
   };
 }
 
@@ -305,6 +452,47 @@ function jsonContent(value: unknown): unknown {
   }
 }
 
+function jsonValue(value: unknown, field: string): unknown {
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    throw invalidPayload(`${field} must be valid JSON.`);
+  }
+}
+
+function jsonObject(value: unknown, field: string): Record<string, unknown> {
+  const parsed = jsonValue(value, field);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw invalidPayload(`${field} must be a JSON object.`);
+  return parsed as Record<string, unknown>;
+}
+
+function jsonObjectArray(value: unknown, field: string, required = false): Record<string, unknown>[] {
+  if (value === undefined || value === '') {
+    if (required) throw invalidPayload(`${field} must contain at least one JSON object.`);
+    return [];
+  }
+  const parsed = jsonValue(value, field);
+  if (!Array.isArray(parsed) || parsed.some((item) => !item || typeof item !== 'object' || Array.isArray(item)) || (required && parsed.length === 0)) {
+    throw invalidPayload(`${field} must be an array of JSON objects${required ? ' with at least one entry' : ''}.`);
+  }
+  return parsed as Record<string, unknown>[];
+}
+
+function textArray(value: unknown): string[] {
+  if (value === undefined || value === '') return [];
+  const values = Array.isArray(value) ? value : String(value).split(',');
+  return values.map((item) => requiredText(item, 'list item'));
+}
+
+function versionedIdentity(input: CommandInput, label: string) {
+  const separator = input.target.id.lastIndexOf('@');
+  const resourceId = separator < 0 ? input.target.id : input.target.id.slice(0, separator);
+  const version = positiveInteger(input.target.revision, separator < 0 ? Number.NaN : Number(input.target.id.slice(separator + 1)), 'version');
+  if (!resourceId) throw invalidPayload(`${label} command requires an exact resource identity.`);
+  return { resourceId, version };
+}
+
 function canonicalJson(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
@@ -322,6 +510,17 @@ async function sha256(value: string) {
 function positiveInteger(value: unknown, fallback: number, field: string) {
   const candidate = value === undefined || value === '' ? fallback : Number(value);
   if (!Number.isSafeInteger(candidate) || candidate < 1) throw invalidPayload(`${field} must be a positive integer.`);
+  return candidate;
+}
+
+function optionalPositiveInteger(value: unknown, field: string) {
+  if (value === undefined || value === '') return undefined;
+  return positiveInteger(value, Number.NaN, field);
+}
+
+function nonNegativeInteger(value: unknown, fallback: number, field: string) {
+  const candidate = value === undefined || value === '' ? fallback : Number(value);
+  if (!Number.isSafeInteger(candidate) || candidate < 0) throw invalidPayload(`${field} must be a non-negative integer.`);
   return candidate;
 }
 

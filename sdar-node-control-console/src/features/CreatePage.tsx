@@ -48,12 +48,23 @@ const FIELDS: Partial<Record<RecordKind, FieldSpec[]>> = {
     { key: 'id', label: 'Capability ID', placeholder: 'cap-new-capability' }, { key: 'name', label: '名称', placeholder: 'New Capability' },
     { key: 'domain', label: '领域', placeholder: 'operations' }, { key: 'version', label: '版本', placeholder: '1', type: 'number' },
     { key: 'description', label: '能力描述', placeholder: '描述输入、输出、成功标准和边界', type: 'textarea' },
+    { key: 'inputSchema', label: 'Input Schema JSON', placeholder: '{"type":"object","properties":{}}', type: 'textarea' },
+    { key: 'outputSchema', label: 'Output Schema JSON', placeholder: '{"type":"object","properties":{}}', type: 'textarea' },
+    { key: 'successCriteria', label: 'Success Criteria JSON', placeholder: '[{"type":"result_present"}]', type: 'textarea' },
+    { key: 'requiredEvidence', label: 'Required Evidence JSON', placeholder: '[{"type":"provider_result"}]', type: 'textarea' },
+    { key: 'effects', label: 'Effects（逗号分隔）', placeholder: 'read_only' },
+    { key: 'supportedModes', label: 'Supported Modes（逗号分隔）', placeholder: 'guidance' },
     { key: 'riskLevel', label: '风险等级', placeholder: 'medium', type: 'select', options: ['low', 'medium', 'high', 'critical'] },
   ],
   a2aExposure: [
     { key: 'id', label: 'Exposure ID', placeholder: 'exposure-capability' }, { key: 'name', label: 'AgentSkill 名称', placeholder: 'Capability Exposure' },
+    { key: 'version', label: 'Exposure 版本', placeholder: '1', type: 'number' },
     { key: 'capabilityId', label: 'Capability ID', placeholder: 'cap-route-planning' }, { key: 'capabilityVersion', label: 'Capability 版本', placeholder: '1', type: 'number' },
     { key: 'agentSkillId', label: 'AgentSkill ID', placeholder: 'route_planning' }, { key: 'visibility', label: '可见性', placeholder: 'organization', type: 'select', options: ['organization', 'public'] },
+    { key: 'description', label: 'Exposure 描述', placeholder: '组织域公开能力描述', type: 'textarea' },
+    { key: 'requestSchema', label: 'Request Schema JSON', placeholder: '{"type":"object","properties":{}}', type: 'textarea' },
+    { key: 'resultSchema', label: 'Result Schema JSON', placeholder: '{"type":"object","properties":{}}', type: 'textarea' },
+    { key: 'readinessPublicationPolicy', label: 'Readiness 发布策略', placeholder: 'publish_when_available', type: 'select', options: ['publish_when_available', 'publish_degraded', 'always_publish_with_status'] },
   ],
 };
 

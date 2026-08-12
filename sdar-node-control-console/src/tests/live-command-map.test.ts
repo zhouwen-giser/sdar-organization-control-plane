@@ -115,4 +115,37 @@ describe('live command map', () => {
       },
     });
   });
+
+  it('maps the Capability/A2A/Task vertical without inventing Runtime routes', async () => {
+    const capability = await mapLiveCommand({
+      operation: operation('createNodeCapabilityDraft'), target: { type: 'capability', id: 'cap-console-read' },
+      reason: 'Create one governed read capability.', idempotencyKey: 'p08-capability',
+      payload: {
+        name: 'Console read', domain: 'console', version: 1, description: 'Read one governed resource.', riskLevel: 'low',
+        inputSchema: '{"type":"object"}', outputSchema: '{"type":"object"}',
+        successCriteria: '[{"type":"result_present"}]', requiredEvidence: '[{"type":"provider_result"}]',
+      },
+    });
+    expect(capability).toMatchObject({
+      path: '/api/v1/node-capabilities', responseKind: 'record', recordKind: 'capability',
+      body: { capabilityId: 'cap-console-read', status: 'draft', definitionHash: expect.stringMatching(/^[a-f0-9]{64}$/u) },
+    });
+
+    await expect(mapLiveCommand({
+      operation: operation('publishA2aExposureVersion'), target: { type: 'a2aExposure', id: 'exposure-console@1' },
+      reason: 'Publish the exact governed exposure.', idempotencyKey: 'p08-exposure',
+    })).resolves.toMatchObject({
+      path: '/api/v1/a2a-exposures/exposure-console/versions/1/publish',
+      currentResourcePath: '/api/v1/a2a-exposures/exposure-console/versions/1',
+      responseKind: 'operation',
+    });
+
+    await expect(mapLiveCommand({
+      operation: operation('cancelTask'), target: { type: 'task', id: 'task-1' },
+      reason: 'Cancel the governed task.', idempotencyKey: 'p08-cancel',
+    })).resolves.toEqual({
+      method: 'POST', path: '/api/v1/tasks/task-1/cancel',
+      body: { reason: 'Cancel the governed task.' }, responseKind: 'operation',
+    });
+  });
 });

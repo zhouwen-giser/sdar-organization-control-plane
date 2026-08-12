@@ -21,6 +21,7 @@
     "test:live-evidence": "node scripts/live-evidence-smoke.mjs",
     "test:live-supply": "node scripts/live-supply-smoke.mjs",
     "test:live-capability-a2a": "node scripts/live-capability-a2a-smoke.mjs",
+    "test:live-recovery": "node scripts/live-recovery-smoke.mjs",
     "build": "tsc --noEmit && vite build",
     "check:bundle-secrets": "node scripts/check-bundle-secrets.mjs",
     "validate": "npm run contract:check && npm run typecheck && npm run lint && npm run test && npm run test:bff && npm run build && npm run check:bundle-secrets",

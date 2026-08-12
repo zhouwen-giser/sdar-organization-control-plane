@@ -1,6 +1,6 @@
 {
   "goalId": "SDAR-SINGLE-NODE-CONSOLE-LIVE-INTEGRATION",
-  "status": "REAL_SMPP_INTEROP_PASSED",
+  "status": "BLOCKED_EXTERNAL_SDAR",
   "implementationRepo": "zhouwen-giser/sdar-organization-control-plane",
   "branch": "feature/single-node-console-live-integration",
   "sourceLocks": {
@@ -55,8 +55,21 @@
       "implementationCommit": "2c8c00ccbf41e342eba95c43bbcec1b06772407a",
       "evidenceCommit": "eb0213292006c64069cd89180d448b6ed732313d",
       "report": "reports/single-node-live-integration/P07-real-smpp-interop.md"
+    },
+    "P08": {
+      "status": "BLOCKED_EXTERNAL_SDAR",
+      "implementationCommit": "8cbf75ed990d5f23fa50af83eda1d136439b41eb",
+      "evidenceCommit": "64736d4eb4b4fbe6276685d201cb49e7820c0810",
+      "report": "reports/single-node-live-integration/P08-capability-a2a-task-vertical.md"
     }
   },
-  "externalBlockers": [],
-  "updatedAt": "2026-08-12T01:42:00.000Z"
+  "externalBlockers": [
+    {
+      "code": "EXT-SDAR-NODE-CONTROL-TASK-CONTROL-001",
+      "owner": "skill-driven-agent-runtime",
+      "detail": "Frozen pauseTask, resumeTask and cancelTask routes return HTTP 404 RESOURCE_NOT_FOUND on the locked live Node Control API.",
+      "evidence": "reports/single-node-live-integration/p08-live-capability-a2a.json"
+    }
+  ],
+  "updatedAt": "2026-08-12T02:02:00.000Z"
 }

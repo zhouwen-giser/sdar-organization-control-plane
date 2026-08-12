@@ -1,0 +1,312 @@
+{
+  "schemaVersion": 1,
+  "status": "completed",
+  "endpointResults": [
+    {
+      "name": "declaration",
+      "path": "/.well-known/sdar-node",
+      "status": 200,
+      "itemCount": 1,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "nodeProfile",
+      "path": "/api/v1/node",
+      "status": 200,
+      "itemCount": 1,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "nodeHealth",
+      "path": "/api/v1/node/health",
+      "status": 200,
+      "itemCount": 1,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "configuration",
+      "path": "/api/v1/configuration-revisions",
+      "status": 200,
+      "itemCount": 0,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "llmProviders",
+      "path": "/api/v1/llm-providers",
+      "status": 200,
+      "itemCount": 0,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "modelRoutes",
+      "path": "/api/v1/model-routes",
+      "status": 200,
+      "itemCount": 0,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "smppSources",
+      "path": "/api/v1/smpp-sources",
+      "status": 200,
+      "itemCount": 1,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "mcpCandidates",
+      "path": "/api/v1/mcp-provider-candidates",
+      "status": 200,
+      "itemCount": 2,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "mcpBindings",
+      "path": "/api/v1/mcp-provider-bindings",
+      "status": 200,
+      "itemCount": 2,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "skills",
+      "path": "/api/v1/skills",
+      "status": 200,
+      "itemCount": 6,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "planTemplates",
+      "path": "/api/v1/plan-templates",
+      "status": 200,
+      "itemCount": 0,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "capabilities",
+      "path": "/api/v1/node-capabilities",
+      "status": 200,
+      "itemCount": 6,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "readiness",
+      "path": "/api/v1/capability-readiness",
+      "status": 200,
+      "itemCount": 6,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "a2aExposures",
+      "path": "/api/v1/a2a-exposures",
+      "status": 200,
+      "itemCount": 1,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "agentCards",
+      "path": "/api/v1/a2a-agent-card-revisions",
+      "status": 200,
+      "itemCount": 9,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "tasks",
+      "path": "/api/v1/tasks",
+      "status": 200,
+      "itemCount": 21,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "evidenceConfiguration",
+      "path": "/api/v1/evidence-export",
+      "status": 404,
+      "itemCount": 0,
+      "etagPresent": true,
+      "optionalMissing": true,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "evidenceStatus",
+      "path": "/api/v1/evidence-export/status",
+      "status": 200,
+      "itemCount": 1,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "operations",
+      "path": "/api/v1/management-operations",
+      "status": 200,
+      "itemCount": 100,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    },
+    {
+      "name": "audit",
+      "path": "/api/v1/audit-events",
+      "status": 200,
+      "itemCount": 100,
+      "etagPresent": true,
+      "optionalMissing": false,
+      "shapeValid": true,
+      "ok": true
+    }
+  ],
+  "detailResults": [
+    {
+      "name": "smppSource",
+      "status": 200,
+      "object": true,
+      "optionalMissing": false,
+      "ok": true
+    },
+    {
+      "name": "mcpBinding",
+      "status": 200,
+      "object": true,
+      "optionalMissing": false,
+      "ok": true
+    },
+    {
+      "name": "skill",
+      "status": 200,
+      "object": true,
+      "optionalMissing": false,
+      "ok": true
+    },
+    {
+      "name": "capability",
+      "status": 200,
+      "object": true,
+      "optionalMissing": false,
+      "ok": true
+    },
+    {
+      "name": "capabilityImplementations",
+      "status": 200,
+      "object": true,
+      "optionalMissing": false,
+      "ok": true
+    },
+    {
+      "name": "readiness",
+      "status": 200,
+      "object": true,
+      "optionalMissing": false,
+      "ok": true
+    },
+    {
+      "name": "a2aExposure",
+      "status": 200,
+      "object": true,
+      "optionalMissing": false,
+      "ok": true
+    },
+    {
+      "name": "agentCard",
+      "status": 200,
+      "object": true,
+      "optionalMissing": false,
+      "ok": true
+    },
+    {
+      "name": "task",
+      "status": 200,
+      "object": true,
+      "optionalMissing": false,
+      "ok": true
+    },
+    {
+      "name": "taskBinding",
+      "status": 200,
+      "object": true,
+      "optionalMissing": false,
+      "ok": true
+    },
+    {
+      "name": "operation",
+      "status": 200,
+      "object": true,
+      "optionalMissing": false,
+      "ok": true
+    }
+  ],
+  "etag": {
+    "present": true,
+    "conditionalStatus": 200,
+    "stable": true,
+    "ok": true
+  },
+  "pagination": {
+    "firstStatus": 200,
+    "firstCount": 1,
+    "nextPageTokenPresent": true,
+    "secondStatus": 200,
+    "secondCount": 1,
+    "ok": true
+  },
+  "sse": {
+    "status": 200,
+    "contentType": "text/event-stream; charset=utf-8",
+    "cacheControl": "no-cache, no-store",
+    "firstFrameObserved": true,
+    "ok": true
+  },
+  "publicConfig": {
+    "gatewayMode": "live",
+    "activeDeploymentRole": "node_admin",
+    "safe": true
+  },
+  "ok": true
+}

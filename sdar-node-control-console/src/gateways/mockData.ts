@@ -295,6 +295,11 @@ export const healthySnapshot: GatewaySnapshot = {
       openQualityIssues: 0, highWatermarkActive: false, lastAcknowledgedSequence: '90071992547409931234',
       lastAcknowledgedAt: AGO.min4, oldestPendingAt: AGO.min4, observedAt: NOW,
     },
+    operations: {
+      outbox: [], sourceCheckpoints: [], projectionIssues: [], qualityIssues: [], deadLetters: [],
+      hasMore: { outbox: false, sourceCheckpoints: false, projectionIssues: false, qualityIssues: false, deadLetters: false },
+      loaded: true,
+    },
   },
   records: {
     configuration, llmProvider, modelRoute, smppSource, mcpCandidate, mcpBinding, skill, planTemplate,

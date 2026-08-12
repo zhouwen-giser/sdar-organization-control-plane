@@ -58,6 +58,15 @@ export interface EvidenceSnapshot {
     lastErrorCode?: string;
     observedAt: string;
   };
+  operations: {
+    outbox: Record<string, unknown>[];
+    sourceCheckpoints: Record<string, unknown>[];
+    projectionIssues: Record<string, unknown>[];
+    qualityIssues: Record<string, unknown>[];
+    deadLetters: Record<string, unknown>[];
+    hasMore: Record<'outbox' | 'sourceCheckpoints' | 'projectionIssues' | 'qualityIssues' | 'deadLetters', boolean>;
+    loaded: boolean;
+  };
 }
 
 export interface CommandInput {

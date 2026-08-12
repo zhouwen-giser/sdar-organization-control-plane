@@ -8,17 +8,29 @@ const CONFIGURATION_OPERATIONS = new Set([
   'rollbackConfigurationRevision',
 ]);
 const READINESS_OPERATION = 'evaluateCapabilityReadiness';
+const EVIDENCE_OPERATIONS = new Set([
+  'createEvidenceExportRevision',
+  'validateEvidenceExportRevision',
+  'publishEvidenceExportRevision',
+  'testEvidenceExportConnection',
+  'replayEvidence',
+  'retryEvidenceDeadLetter',
+  'reconcileEvidenceCoverage',
+]);
+export const REQUIRED_EVIDENCE_FAMILIES = [
+  'runtime', 'skill', 'mcp_task', 'capability', 'experience', 'replay', 'artifact', 'node_control', 'evidence',
+] as const;
 
 export interface LiveCommandMapping {
   method: string;
   path: string;
   body: unknown;
   currentResourcePath?: string;
-  responseKind?: 'configuration' | 'operation';
+  responseKind?: 'configuration' | 'evidenceConfiguration' | 'operation';
 }
 
 export async function mapLiveCommand(input: CommandInput): Promise<LiveCommandMapping> {
-  if (!CONFIGURATION_OPERATIONS.has(input.operation.operationId) && input.operation.operationId !== READINESS_OPERATION) {
+  if (!CONFIGURATION_OPERATIONS.has(input.operation.operationId) && input.operation.operationId !== READINESS_OPERATION && !EVIDENCE_OPERATIONS.has(input.operation.operationId)) {
     throw new ConsoleError({
       status: 501,
       code: 'CONSOLE_LIVE_COMMAND_NOT_MAPPED',
@@ -28,6 +40,8 @@ export async function mapLiveCommand(input: CommandInput): Promise<LiveCommandMa
       retryable: false,
     });
   }
+
+  if (EVIDENCE_OPERATIONS.has(input.operation.operationId)) return evidenceCommand(input);
 
   if (input.operation.operationId === READINESS_OPERATION) {
     const separator = input.target.id.lastIndexOf('@');
@@ -68,6 +82,84 @@ export async function mapLiveCommand(input: CommandInput): Promise<LiveCommandMa
       expectedRevision: input.expectedRevision ?? revision,
     },
     responseKind: input.operation.operationId === 'validateConfigurationRevision' ? 'configuration' : 'operation',
+  };
+}
+
+function evidenceCommand(input: CommandInput): LiveCommandMapping {
+  const operationId = input.operation.operationId;
+  if (operationId === 'createEvidenceExportRevision') {
+    const payload = input.payload ?? {};
+    const includedFamilies = Array.isArray(payload.includedFamilies) ? payload.includedFamilies : REQUIRED_EVIDENCE_FAMILIES;
+    if (REQUIRED_EVIDENCE_FAMILIES.some((family) => !includedFamilies.includes(family))) {
+      throw invalidPayload('Evidence v1.4.1 required families cannot be disabled.');
+    }
+    return {
+      method: input.operation.method,
+      path: input.operation.path,
+      body: {
+        exportId: requiredText(payload.exportId ?? input.target.id, 'exportId'),
+        endpointRef: requiredText(payload.endpointRef, 'endpointRef'),
+        sourceId: requiredText(payload.sourceId, 'sourceId'),
+        ...(payload.nodeId ? { nodeId: requiredText(payload.nodeId, 'nodeId') } : {}),
+        credentialRef: requiredText(payload.credentialRef, 'credentialRef'),
+        includedFamilies,
+        excludedDiagnosticTypes: Array.isArray(payload.excludedDiagnosticTypes) ? payload.excludedDiagnosticTypes : [],
+        batchPolicy: payload.batchPolicy ?? { maxRecords: 100, maxBytes: 262_144, flushIntervalMs: 1_000 },
+        retryPolicy: payload.retryPolicy ?? { baseDelayMs: 1_000, maxDelayMs: 60_000, maxAttempts: 20 },
+        outboxPolicy: payload.outboxPolicy ?? { maxPendingRecords: 100_000, retentionDays: 30 },
+        redactionProfile: requiredText(payload.redactionProfile ?? 'default', 'redactionProfile'),
+        artifactMode: requiredText(payload.artifactMode ?? 'reference', 'artifactMode'),
+        status: 'draft',
+        revision: positiveInteger(payload.revision, typeof input.target.revision === 'number' ? input.target.revision : 1, 'revision'),
+        applyMode: requiredText(payload.applyMode ?? 'hot_reload', 'applyMode'),
+      },
+      responseKind: 'evidenceConfiguration',
+    };
+  }
+  if (operationId === 'validateEvidenceExportRevision' || operationId === 'publishEvidenceExportRevision') {
+    const revision = positiveInteger(input.target.revision, Number(input.payload?.revision ?? input.expectedRevision), 'revision');
+    return {
+      method: input.operation.method,
+      path: input.operation.path.replace('{revision}', String(revision)),
+      currentResourcePath: '/api/v1/evidence-export',
+      body: { reason: requiredText(input.reason, 'reason'), expectedRevision: input.expectedRevision ?? revision },
+      responseKind: operationId === 'validateEvidenceExportRevision' ? 'evidenceConfiguration' : 'operation',
+    };
+  }
+  if (operationId === 'retryEvidenceDeadLetter') {
+    return {
+      method: input.operation.method,
+      path: input.operation.path.replace('{deadLetterId}', encodeURIComponent(requiredText(input.target.id, 'deadLetterId'))),
+      body: { reason: requiredText(input.reason, 'reason') },
+      responseKind: 'operation',
+    };
+  }
+  if (operationId === 'replayEvidence') {
+    const payload = input.payload ?? {};
+    const scope = requiredText(payload.scope, 'scope');
+    const selector = scope === 'record'
+      ? { recordId: requiredText(payload.recordId ?? input.target.id, 'recordId') }
+      : scope === 'source_partition'
+        ? { sourceFamily: requiredText(payload.sourceFamily, 'sourceFamily'), sourcePartition: requiredText(payload.sourcePartition, 'sourcePartition') }
+        : scope === 'episode'
+          ? { episodeId: requiredText(payload.episodeId ?? input.target.id, 'episodeId') }
+          : undefined;
+    if (!selector) throw invalidPayload('Evidence replay scope must be record, source_partition or episode.');
+    return { method: input.operation.method, path: input.operation.path, body: { scope, ...selector, reason: requiredText(input.reason, 'reason') }, responseKind: 'operation' };
+  }
+  if (operationId === 'reconcileEvidenceCoverage') {
+    return {
+      method: input.operation.method,
+      path: input.operation.path,
+      body: { ...(input.payload?.episodeId ? { episodeId: requiredText(input.payload.episodeId, 'episodeId') } : {}), reason: requiredText(input.reason, 'reason') },
+      responseKind: 'operation',
+    };
+  }
+  return {
+    method: input.operation.method,
+    path: input.operation.path,
+    body: { reason: requiredText(input.reason, 'reason'), ...(input.expectedRevision === undefined ? {} : { expectedRevision: input.expectedRevision }) },
+    responseKind: 'operation',
   };
 }
 

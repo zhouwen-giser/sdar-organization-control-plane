@@ -51,4 +51,37 @@ describe('live command map', () => {
       reason: 'Refresh readiness.', idempotencyKey: 'refresh-1',
     })).rejects.toEqual(expect.objectContaining({ status: 501, code: 'CONSOLE_LIVE_COMMAND_NOT_MAPPED' }));
   });
+
+  it('builds the strict Evidence v1.4.1 configuration and keeps every required family', async () => {
+    const mapping = await mapLiveCommand({
+      operation: operation('createEvidenceExportRevision'),
+      target: { type: 'evidenceExport', id: 'evidence-console-p06', revision: 1 },
+      reason: 'Create the P06 Evidence export.',
+      idempotencyKey: 'p06-evidence-create',
+      payload: {
+        endpointRef: 'http://127.0.0.1:18462/v1/evidence',
+        credentialRef: 'secret:evidence/p06',
+        sourceId: 'sdar-node',
+      },
+    });
+    expect(mapping).toMatchObject({ method: 'POST', path: '/api/v1/evidence-export/revisions', responseKind: 'evidenceConfiguration' });
+    expect(mapping.body).toMatchObject({
+      exportId: 'evidence-console-p06', status: 'draft', revision: 1, artifactMode: 'reference',
+      includedFamilies: ['runtime', 'skill', 'mcp_task', 'capability', 'experience', 'replay', 'artifact', 'node_control', 'evidence'],
+    });
+  });
+
+  it('maps bounded Evidence recovery without inventing a synchronous result', async () => {
+    await expect(mapLiveCommand({
+      operation: operation('replayEvidence'),
+      target: { type: 'evidenceRecord', id: 'evidence_deadbeef' },
+      reason: 'Replay one retained record.',
+      idempotencyKey: 'p06-replay',
+      payload: { scope: 'record', recordId: 'evidence_deadbeef' },
+    })).resolves.toEqual({
+      method: 'POST', path: '/api/v1/evidence-export/replays',
+      body: { scope: 'record', recordId: 'evidence_deadbeef', reason: 'Replay one retained record.' },
+      responseKind: 'operation',
+    });
+  });
 });

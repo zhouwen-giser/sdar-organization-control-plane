@@ -154,6 +154,11 @@ function emptyLiveSnapshot(): GatewaySnapshot {
     evidence: {
       configuration: { id: 'live-evidence-loading', name: 'Evidence Export', status: 'unavailable', summary: 'Awaiting authoritative Node Control data.', updatedAt: observedAt, fields: {} },
       status: { status: 'unavailable', pendingRecords: 0, deadLetterRecords: 0, openProjectionIssues: 0, openQualityIssues: 0, highWatermarkActive: false, observedAt },
+      operations: {
+        outbox: [], sourceCheckpoints: [], projectionIssues: [], qualityIssues: [], deadLetters: [],
+        hasMore: { outbox: false, sourceCheckpoints: false, projectionIssues: false, qualityIssues: false, deadLetters: false },
+        loaded: false,
+      },
     },
     records,
     nodeEvents: [],
@@ -192,6 +197,15 @@ export class HttpNodeControlGateway implements NodeControlGateway {
     const kinds: RecordKind[] = ['configuration', 'mcpBinding', 'capability', 'readiness', 'task', 'operation', 'audit'];
     for (const kind of kinds) {
       try { await this.list(kind); } catch { /* Individual page hooks surface their authoritative errors. */ }
+    }
+  }
+  async getEvidenceManifest(episodeId: string): Promise<Record<string, unknown> | undefined> {
+    try {
+      const response = await this.client.request<Record<string, unknown>>({ method: 'GET', path: `/api/v1/evidence-export/episode-manifests/${encodeURIComponent(episodeId)}` });
+      return response.data;
+    } catch (error) {
+      if (error instanceof ConsoleError && error.status === 404) return undefined;
+      throw error;
     }
   }
   operationById(operationId: string): ContractOperation | undefined {
@@ -291,6 +305,16 @@ export class HttpNodeControlGateway implements NodeControlGateway {
       this.upsertRecord('configuration', record);
       return { mode: 'synchronous', acceptedAt, record };
     }
+    if (mapping.responseKind === 'evidenceConfiguration') {
+      const record = mapEvidenceConfiguration(response.data, response);
+      this.snapshot = {
+        ...this.snapshot,
+        revision: this.snapshot.revision + 1,
+        evidence: { ...this.snapshot.evidence, configuration: record },
+      };
+      this.emit();
+      return { mode: 'synchronous', acceptedAt, record };
+    }
     return { mode: 'synchronous', acceptedAt };
   }
 
@@ -369,8 +393,15 @@ export class HttpNodeControlGateway implements NodeControlGateway {
     const declarationRequest = this.client.request<Record<string, unknown>>({ method: 'GET', path: '/.well-known/sdar-node' });
     const evidenceConfigurationRequest = this.client.request<Record<string, unknown>>({ method: 'GET', path: '/api/v1/evidence-export' });
     const evidenceStatusRequest = this.client.request<Record<string, unknown>>({ method: 'GET', path: '/api/v1/evidence-export/status' });
-    const [profileResult, healthResult, declarationResult, evidenceConfigurationResult, evidenceStatusResult] = await Promise.allSettled([
-      profileRequest, healthRequest, declarationRequest, evidenceConfigurationRequest, evidenceStatusRequest,
+    const evidenceOperationRequests = [
+      '/api/v1/evidence-export/outbox',
+      '/api/v1/evidence-export/source-checkpoints',
+      '/api/v1/evidence-export/projection-issues',
+      '/api/v1/evidence-export/quality-issues',
+      '/api/v1/evidence-export/dead-letters',
+    ].map((path) => this.client.request<Record<string, unknown>>({ method: 'GET', path, query: { limit: 100 } }));
+    const [profileResult, healthResult, declarationResult, evidenceConfigurationResult, evidenceStatusResult, ...evidenceOperationResults] = await Promise.allSettled([
+      profileRequest, healthRequest, declarationRequest, evidenceConfigurationRequest, evidenceStatusRequest, ...evidenceOperationRequests,
     ]);
     if (profileResult.status === 'rejected') throw profileResult.reason;
     if (healthResult.status === 'rejected') throw healthResult.reason;
@@ -384,6 +415,14 @@ export class HttpNodeControlGateway implements NodeControlGateway {
     const healthFields = health.data;
     const evidenceFields = evidenceConfiguration?.data ?? {};
     const statusFields = evidenceStatus?.data ?? {};
+    const [outbox, sourceCheckpoints, projectionIssues, qualityIssues, deadLetters] = evidenceOperationResults.map((result) => {
+      if (result?.status !== 'fulfilled') return { items: [] as Record<string, unknown>[], hasMore: false };
+      const data = result.value.data;
+      return {
+        items: Array.isArray(data.items) ? data.items.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object' && !Array.isArray(item)) : [],
+        hasMore: typeof data.nextCursor === 'string' && data.nextCursor.length > 0,
+      };
+    });
     const observedAt = typeof healthFields.observedAt === 'string' ? healthFields.observedAt : '';
     this.snapshot = {
       ...this.snapshot,
@@ -423,9 +462,9 @@ export class HttpNodeControlGateway implements NodeControlGateway {
           status: statusFields.status === 'healthy' || statusFields.status === 'degraded' || statusFields.status === 'blocked' || statusFields.status === 'disabled' || statusFields.status === 'unavailable' ? statusFields.status : 'unavailable',
           ...(typeof statusFields.activeRevision === 'number' ? { activeRevision: statusFields.activeRevision } : {}),
           pendingRecords: typeof statusFields.pendingRecords === 'number' ? statusFields.pendingRecords : 0,
-          deadLetterRecords: 0,
-          openProjectionIssues: 0,
-          openQualityIssues: 0,
+          deadLetterRecords: typeof statusFields.deadLetterRecords === 'number' ? statusFields.deadLetterRecords : deadLetters.items.length,
+          openProjectionIssues: typeof statusFields.openProjectionIssues === 'number' ? statusFields.openProjectionIssues : projectionIssues.items.length,
+          openQualityIssues: typeof statusFields.openQualityIssues === 'number' ? statusFields.openQualityIssues : qualityIssues.items.length,
           highWatermarkActive: false,
           ...(typeof statusFields.lastAcknowledgedSequence === 'string' ? { lastAcknowledgedSequence: statusFields.lastAcknowledgedSequence } : {}),
           ...(typeof statusFields.lastAcknowledgedAt === 'string' ? { lastAcknowledgedAt: statusFields.lastAcknowledgedAt } : {}),
@@ -433,10 +472,38 @@ export class HttpNodeControlGateway implements NodeControlGateway {
           ...(typeof statusFields.lastErrorCode === 'string' ? { lastErrorCode: statusFields.lastErrorCode } : {}),
           observedAt: typeof statusFields.observedAt === 'string' ? statusFields.observedAt : '',
         },
+        operations: {
+          outbox: outbox.items,
+          sourceCheckpoints: sourceCheckpoints.items,
+          projectionIssues: projectionIssues.items,
+          qualityIssues: qualityIssues.items,
+          deadLetters: deadLetters.items,
+          hasMore: {
+            outbox: outbox.hasMore,
+            sourceCheckpoints: sourceCheckpoints.hasMore,
+            projectionIssues: projectionIssues.hasMore,
+            qualityIssues: qualityIssues.hasMore,
+            deadLetters: deadLetters.hasMore,
+          },
+          loaded: evidenceOperationResults.every((result) => result?.status === 'fulfilled'),
+        },
       },
     };
     this.emit();
   }
+}
+
+function mapEvidenceConfiguration(value: unknown, response: NodeControlResponse<unknown>): ConsoleRecord {
+  const fields = value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  return {
+    id: typeof fields.exportId === 'string' ? fields.exportId : 'evidence-export',
+    name: typeof fields.exportId === 'string' ? fields.exportId : 'Evidence Export',
+    status: typeof fields.status === 'string' ? fields.status : 'unavailable',
+    summary: 'Canonical Evidence export configuration.',
+    ...(typeof fields.revision === 'number' ? { revision: fields.revision } : {}),
+    updatedAt: '',
+    fields: { ...fields, __metadata: { ...(response.etag ? { etag: response.etag } : {}), sourceRevision: fields.revision } },
+  };
 }
 
 function defaultEventSourceFactory(): LiveEventSourceFactory | undefined {

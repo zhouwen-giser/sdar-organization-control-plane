@@ -47,6 +47,10 @@ export class MockNodeControlGateway implements NodeControlGateway {
   }
 
   reset() { this.setScenario('healthy'); }
+  async getEvidenceManifest(episodeId: string) {
+    await this.latency();
+    return { episodeId, status: 'complete', expectedFamilies: ['runtime', 'skill'], completedFamilies: ['runtime', 'skill'], missingFamilies: [] };
+  }
 
   operationById(operationId: string): ContractOperation | undefined {
     return CONTRACT_OPERATIONS.find((operation) => operation.operationId === operationId);

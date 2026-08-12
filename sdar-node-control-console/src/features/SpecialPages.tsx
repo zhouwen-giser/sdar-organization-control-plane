@@ -5,6 +5,7 @@ import type { RecordKind, RoleId, Scope } from '../domain';
 import { navigate } from '../routes';
 import { ROLE_LABELS, ROLE_SCOPES, canInvoke, operationLabel, requiredScope } from '../gateways/operationPolicy';
 import { nodeControlGateway } from '../gateways/factory';
+import { REQUIRED_EVIDENCE_FAMILIES } from '../gateways/liveCommandMap';
 import { getOperation, useConsole, useGatewaySnapshot, useRecord } from '../state/ConsoleState';
 import { Badge, Button, Callout, DefinitionList, EmptyState, JsonViewer, MetricCard, OperationAction, Panel, SearchField, SelectField, Tabs, formatTime } from '../components/ui';
 import { DetailPage } from './DetailPage';
@@ -50,17 +51,58 @@ export function EvidenceExportPage({ edit = false }: { edit?: boolean }) {
   const snapshot = useGatewaySnapshot();
   const { execute, canInvoke } = useConsole();
   const [tab, setTab] = useState(edit ? 'edit' : 'overview');
-  const [form, setForm] = useState({ endpointRef: String(snapshot.evidence.configuration.fields.endpointRef), credentialRef: String(snapshot.evidence.configuration.fields.credentialRef), sourceId: String(snapshot.evidence.configuration.fields.sourceId), applyMode: String(snapshot.evidence.configuration.fields.applyMode) });
+  const [form, setForm] = useState({ exportId: 'evidence-export-primary', endpointRef: '', credentialRef: 'secret:evidence/export-primary', sourceId: 'sdar-node', applyMode: 'hot_reload' });
   const [reason, setReason] = useState('');
   const [done, setDone] = useState(false);
+  const [episodeId, setEpisodeId] = useState('');
+  const [manifest, setManifest] = useState<Record<string, unknown>>();
+  const [manifestStatus, setManifestStatus] = useState('');
+  const idempotencyKeys = useMemo(() => ({ create: crypto.randomUUID(), replay: crypto.randomUUID(), reconcile: crypto.randomUUID() }), []);
+  const readOperation = getOperation('getEvidenceExportConfiguration');
   const createOperation = getOperation('createEvidenceExportRevision');
-  const submit = async () => { await execute({ operation: createOperation, target: { type: 'evidenceExport', id: snapshot.evidence.configuration.id, revision: Number(snapshot.evidence.configuration.revision) }, expectedRevision: Number(snapshot.evidence.configuration.revision), reason, idempotencyKey: `evidence-revision-${Date.now()}`, payload: { ...snapshot.evidence.configuration.fields, ...form } }); setDone(true); };
+  const submit = async () => {
+    await execute({
+      operation: createOperation,
+      target: { type: 'evidenceExport', id: form.exportId, revision: 1 },
+      expectedRevision: 1,
+      reason,
+      idempotencyKey: idempotencyKeys.create,
+      payload: { ...form, revision: 1, includedFamilies: [...REQUIRED_EVIDENCE_FAMILIES] },
+    });
+    setDone(true);
+  };
+  const loadManifest = async () => {
+    setManifestStatus('loading');
+    try {
+      const value = await nodeControlGateway.getEvidenceManifest?.(episodeId.trim());
+      setManifest(value);
+      setManifestStatus(value ? 'loaded' : 'not-found');
+    } catch {
+      setManifest(undefined);
+      setManifestStatus('failed');
+    }
+  };
+  const replayFirstRecord = async () => {
+    const first = snapshot.evidence.operations.outbox[0];
+    const recordId = typeof first?.recordId === 'string' ? first.recordId : '';
+    if (!recordId) return;
+    await execute({ operation: getOperation('replayEvidence'), target: { type: 'evidenceRecord', id: recordId }, reason, idempotencyKey: idempotencyKeys.replay, payload: { scope: 'record', recordId } });
+  };
+  const reconcile = async () => {
+    await execute({ operation: getOperation('reconcileEvidenceCoverage'), target: { type: 'evidenceCoverage', id: episodeId || 'all' }, reason, idempotencyKey: idempotencyKeys.reconcile, payload: episodeId ? { episodeId } : {} });
+  };
+  if (!canInvoke(readOperation)) return <SystemStatePage kind="403" />;
   return <div className="page-stack"><section className="detail-hero"><div className="detail-title"><span className="eyebrow">Evidence Export · sdar.evidence/v1</span><div><h2>Evidence Export</h2><Badge value={snapshot.evidence.status.status} /></div><p>配置 Canonical Evidence 出口和本地 Delivery State；不提供 Evidence Analytics、ClickHouse 或 Evaluation 查询代理。</p></div><div className="hero-actions"><OperationAction operationId="testEvidenceExportConnection" target={{ type: 'evidenceExport', id: snapshot.evidence.configuration.id, revision: Number(snapshot.evidence.configuration.revision) }} /><Button variant="primary" onClick={() => { setTab('edit'); if (!edit) navigate('/evidence-export/edit'); }}>创建 Revision</Button></div></section>
     <Callout title="Evidence 权威边界" tone="warning">控制台只管理 Export 配置、投递状态与恢复操作；Canonical Evidence 内容仍由正式 Evidence API 权威管理。</Callout>
     <div className="metric-grid four"><MetricCard label="出口状态" value={snapshot.evidence.status.status} detail={`Active Revision ${snapshot.evidence.status.activeRevision ?? '—'}`} tone="success" /><MetricCard label="Pending Records" value={snapshot.evidence.status.pendingRecords} detail={`Oldest ${formatTime(snapshot.evidence.status.oldestPendingAt ?? snapshot.evidence.status.observedAt)}`} /><MetricCard label="ACK Sequence" value={snapshot.evidence.status.lastAcknowledgedSequence ?? '—'} detail={snapshot.evidence.status.lastAcknowledgedAt ? formatTime(snapshot.evidence.status.lastAcknowledgedAt) : 'No ACK'} /><MetricCard label="Dead Letters" value={snapshot.evidence.status.deadLetterRecords} detail={`${snapshot.evidence.status.openProjectionIssues + snapshot.evidence.status.openQualityIssues} open issues`} tone="info" /></div>
-    <Tabs active={tab} onChange={setTab} tabs={[{ id: 'overview', label: '配置与状态' }, { id: 'edit', label: 'Revision 草稿' }, { id: 'delivery', label: 'Delivery 语义' }]} />
+    <Tabs active={tab} onChange={setTab} tabs={[{ id: 'overview', label: '配置与状态' }, { id: 'outbox', label: 'Outbox' }, { id: 'sources', label: 'Source Checkpoints' }, { id: 'issues', label: 'Issues / Dead Letters' }, { id: 'manifest', label: 'Episode Manifest' }, { id: 'recovery', label: 'Recovery' }, { id: 'edit', label: 'Revision 草稿' }, { id: 'delivery', label: 'Delivery 语义' }]} />
     {tab === 'overview' && <div className="detail-grid"><Panel title="出口配置" className="span-2"><DefinitionList fields={snapshot.evidence.configuration.fields} /></Panel><Panel title="本地 Delivery State"><DefinitionList fields={snapshot.evidence.status as never} /></Panel></div>}
-    {tab === 'edit' && <Panel title="创建 Evidence Export Revision" subtitle="Secret 只能使用 credentialRef。">{done ? <div className="completion-inline"><CheckCircle2 /><div><strong>Revision 草稿已创建</strong><p>下一步执行 Validate 和 Publish；Publish 后仍需 Runtime ACK。</p></div></div> : <><div className="form-grid"><label className="form-field full"><span>Endpoint Ref</span><input value={form.endpointRef} onChange={(event) => setForm({ ...form, endpointRef: event.target.value })} /></label><label className="form-field full"><span>Credential Ref</span><input value={form.credentialRef} onChange={(event) => setForm({ ...form, credentialRef: event.target.value })} /></label><label className="form-field"><span>Source ID</span><input value={form.sourceId} onChange={(event) => setForm({ ...form, sourceId: event.target.value })} /></label><label className="form-field"><span>Apply Mode</span><select value={form.applyMode} onChange={(event) => setForm({ ...form, applyMode: event.target.value })}><option>hot_reload</option><option>reconnect_required</option><option>restart_required</option></select></label><label className="form-field full"><span>变更原因</span><textarea value={reason} onChange={(event) => setReason(event.target.value)} /></label></div><div className="form-footer"><Button onClick={() => navigate('/evidence-export')}>取消</Button><Button variant="primary" disabled={!canInvoke(createOperation) || reason.trim().length < 5 || !form.credentialRef.startsWith('secret://')} onClick={submit}>创建 Revision</Button></div></>}</Panel>}
+    {tab === 'outbox' && <EvidenceMetadataPanel title="Canonical Evidence Outbox 元数据" items={snapshot.evidence.operations.outbox} hasMore={snapshot.evidence.operations.hasMore.outbox} />}
+    {tab === 'sources' && <EvidenceMetadataPanel title="Source Checkpoints" items={snapshot.evidence.operations.sourceCheckpoints} hasMore={snapshot.evidence.operations.hasMore.sourceCheckpoints} />}
+    {tab === 'issues' && <div className="page-stack"><EvidenceMetadataPanel title="Projection Issues" items={snapshot.evidence.operations.projectionIssues} hasMore={snapshot.evidence.operations.hasMore.projectionIssues} /><EvidenceMetadataPanel title="Quality Issues" items={snapshot.evidence.operations.qualityIssues} hasMore={snapshot.evidence.operations.hasMore.qualityIssues} /><EvidenceMetadataPanel title="Dead Letters" items={snapshot.evidence.operations.deadLetters} hasMore={snapshot.evidence.operations.hasMore.deadLetters} /></div>}
+    {tab === 'manifest' && <Panel title="Episode Evidence Manifest" subtitle="只读取可重算的 Manifest 元数据，不读取 Canonical Evidence payload。"><div className="form-grid"><label className="form-field full"><span>Episode ID</span><input value={episodeId} onChange={(event) => setEpisodeId(event.target.value)} /></label></div><div className="form-footer"><Button variant="primary" disabled={!episodeId.trim()} onClick={loadManifest}>读取 Manifest</Button></div>{manifest && <JsonViewer value={manifest} label="Episode Manifest" />}{manifestStatus === 'not-found' && <Callout title="Manifest 不存在">该 Episode 当前没有可用 Manifest。</Callout>}{manifestStatus === 'failed' && <Callout title="Manifest 读取失败" tone="warning">Node Control 未返回可用 Manifest。</Callout>}</Panel>}
+    {tab === 'recovery' && <Panel title="Evidence Recovery" subtitle="所有恢复操作均创建真实 ManagementOperation，并使用稳定 Idempotency-Key。"><div className="form-grid"><label className="form-field full"><span>原因</span><textarea value={reason} onChange={(event) => setReason(event.target.value)} /></label><label className="form-field full"><span>可选 Episode ID</span><input value={episodeId} onChange={(event) => setEpisodeId(event.target.value)} /></label></div><div className="form-footer"><Button disabled={reason.trim().length < 5 || snapshot.evidence.operations.outbox.length === 0 || !canInvoke(getOperation('replayEvidence'))} onClick={replayFirstRecord}>重放首条可见 Record</Button><Button variant="primary" disabled={reason.trim().length < 5 || !canInvoke(getOperation('reconcileEvidenceCoverage'))} onClick={reconcile}>重新对账覆盖率</Button></div><EvidenceDeadLetterActions items={snapshot.evidence.operations.deadLetters} reason={reason} execute={execute} canInvoke={canInvoke} /></Panel>}
+    {tab === 'edit' && <Panel title="创建 Evidence Export Revision" subtitle="Secret 只能使用 credentialRef；九个 required families 固定启用。">{done ? <div className="completion-inline"><CheckCircle2 /><div><strong>Revision 草稿已创建</strong><p>下一步执行 Validate 和 Publish；Publish 后仍需 Runtime ACK。</p></div></div> : <><div className="form-grid"><label className="form-field"><span>Export ID</span><input value={form.exportId} onChange={(event) => setForm({ ...form, exportId: event.target.value })} /></label><label className="form-field full"><span>Endpoint Ref</span><input value={form.endpointRef} onChange={(event) => setForm({ ...form, endpointRef: event.target.value })} /></label><label className="form-field full"><span>Credential Ref</span><input value={form.credentialRef} onChange={(event) => setForm({ ...form, credentialRef: event.target.value })} /></label><label className="form-field"><span>Source ID</span><input value={form.sourceId} onChange={(event) => setForm({ ...form, sourceId: event.target.value })} /></label><label className="form-field"><span>Apply Mode</span><select value={form.applyMode} onChange={(event) => setForm({ ...form, applyMode: event.target.value })}><option>hot_reload</option><option>reconnect_required</option><option>restart_required</option></select></label><label className="form-field full"><span>Required Families</span><input readOnly value={REQUIRED_EVIDENCE_FAMILIES.join(', ')} /></label><label className="form-field full"><span>变更原因</span><textarea value={reason} onChange={(event) => setReason(event.target.value)} /></label></div><div className="form-footer"><Button onClick={() => navigate('/evidence-export')}>取消</Button><Button variant="primary" disabled={!canInvoke(createOperation) || reason.trim().length < 5 || !/^(?:env|secret):/.test(form.credentialRef) || !form.endpointRef.startsWith('http')} onClick={submit}>创建 Revision</Button></div></>}</Panel>}
     {tab === 'delivery' && <Panel title="出口可靠性模型"><div className="timeline"><div className="complete"><span>1</span><div><strong>Runtime 产生 Canonical Evidence</strong><p>事实先进入事务 Outbox / WAL。</p></div></div><div className="complete"><span>2</span><div><strong>WAL fsync</strong><p>记录持久化完成后才允许向上游 ACK。</p></div></div><div><span>3</span><div><strong>批量投递与重试</strong><p>按 Batch、Retry、Redaction 与 CredentialRef 策略投递。</p></div></div><div><span>4</span><div><strong>组织平台独立消费</strong><p>SDAR Console 不提供 Evidence Analytics 查询。</p></div></div></div></Panel>}
   </div>;
 }
@@ -72,6 +114,18 @@ export function EventsPage() {
     <Callout title="Event is a hint">事件不是审计记录、遥测事实或资源完整快照。UI 只用它触发刷新和显示变化提示。</Callout>
     <Panel title="最近事件" subtitle={`${snapshot.nodeEvents.length} 条实时事件提示`} actions={<Button variant="ghost" onClick={() => void nodeControlGateway.refreshOverview?.()}><RefreshCcw size={15} />重新 GET 权威资源</Button>}><div className="event-stream">{snapshot.records.event.map((item) => <article key={item.id}><div className="event-rail"><span /><small>{formatTime(item.updatedAt)}</small></div><div className="event-card"><header><Radio size={16} /><strong>{item.name}</strong><Badge value={item.status} /></header><p>{item.summary}</p><div className="event-meta"><code>{String(item.fields.aggregateType)}:{String(item.fields.aggregateId)}@{String(item.fields.aggregateRevision)}</code><span>{String(item.fields.correlationId)}</span></div></div></article>)}</div></Panel>
   </div>;
+}
+
+function EvidenceMetadataPanel({ title, items, hasMore }: { title: string; items: Record<string, unknown>[]; hasMore: boolean }) {
+  return <Panel title={title} subtitle={`${items.length}${hasMore ? '+' : ''} 条有界元数据；payload 永不返回。`}>{items.length === 0 ? <EmptyState title="暂无记录" detail="Node Control 返回了空的有界列表。" /> : <div className="event-stream">{items.map((item, index) => <article key={String(item.recordId ?? item.issueId ?? item.deadLetterId ?? item.sourcePartition ?? index)}><div className="event-card"><JsonViewer value={item} label={`${title} ${index + 1}`} /></div></article>)}</div>}</Panel>;
+}
+
+function EvidenceDeadLetterActions({ items, reason, execute, canInvoke }: { items: Record<string, unknown>[]; reason: string; execute: ReturnType<typeof useConsole>['execute']; canInvoke: ReturnType<typeof useConsole>['canInvoke'] }) {
+  const operation = getOperation('retryEvidenceDeadLetter');
+  return <div className="form-footer">{items.map((item) => {
+    const id = typeof item.deadLetterId === 'string' ? item.deadLetterId : '';
+    return <Button key={id} disabled={!id || reason.trim().length < 5 || !canInvoke(operation)} onClick={() => execute({ operation, target: { type: 'evidenceDeadLetter', id }, reason, idempotencyKey: crypto.randomUUID() })}>Retry {id.slice(0, 12)}</Button>;
+  })}</div>;
 }
 
 export function AccessPage() {

@@ -61,6 +61,11 @@
       "implementationCommit": "8cbf75ed990d5f23fa50af83eda1d136439b41eb",
       "evidenceCommit": "64736d4eb4b4fbe6276685d201cb49e7820c0810",
       "report": "reports/single-node-live-integration/P08-capability-a2a-task-vertical.md"
+    },
+    "P09": {
+      "status": "BLOCKED_EXTERNAL_SDAR",
+      "implementationCommit": "6a62eb514c365bf6e7ae74c66e835cf9ff569412",
+      "report": "reports/single-node-live-integration/P09-browser-live-e2e.md"
     }
   },
   "externalBlockers": [
@@ -71,5 +76,5 @@
       "evidence": "reports/single-node-live-integration/p08-live-capability-a2a.json"
     }
   ],
-  "updatedAt": "2026-08-12T02:02:00.000Z"
+  "updatedAt": "2026-08-12T02:45:00.000Z"
 }

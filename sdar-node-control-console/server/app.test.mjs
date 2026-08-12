@@ -137,6 +137,17 @@ test('streams SSE with Last-Event-ID and disables buffering', async () => {
   assert.match(await response.text(), /id: evt-2/);
 });
 
+test('bridges the browser EventSource cursor query to Last-Event-ID without forwarding the query', async () => {
+  const response = await fetch(`${bffBase}/bff/node-control/api/v1/events?lastEventId=evt-query-1`);
+  assert.equal(response.status, 200);
+  assert.equal(requests.at(-1).headers['last-event-id'], 'evt-query-1');
+  assert.equal(requests.at(-1).url, '/api/v1/events');
+
+  const invalid = await fetch(`${bffBase}/bff/node-control/api/v1/events?lastEventId=`);
+  assert.equal(invalid.status, 400);
+  assert.equal((await invalid.json()).code, 'CONSOLE_PROXY_EVENT_CURSOR_INVALID');
+});
+
 test('rejects non-contract routes and never follows upstream redirects', async () => {
   const beforeCount = requests.length;
   const forbidden = await fetch(`${bffBase}/bff/node-control/api/v1/runtime/internal`);

@@ -117,4 +117,9 @@ export interface GatewaySnapshot {
   evidence: EvidenceSnapshot;
   records: Record<RecordKind, ConsoleRecord[]>;
   nodeEvents: NodeEventEnvelope[];
+  eventStream?: {
+    status: 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
+    reconnectAttempts: number;
+    lastEventId?: string;
+  };
 }

@@ -29,6 +29,16 @@ function safePath(pathname) {
   return decoded;
 }
 
+function eventCursor(targetUrl, pathname) {
+  const cursor = targetUrl.searchParams.get('lastEventId');
+  if (cursor === null) return undefined;
+  if (pathname !== '/api/v1/events' || cursor.trim() !== cursor || cursor.length < 1 || cursor.length > 512 || /[\u0000-\u001f\u007f]/u.test(cursor)) {
+    throw Object.assign(new Error('The SSE cursor is invalid.'), { status: 400 });
+  }
+  targetUrl.searchParams.delete('lastEventId');
+  return cursor;
+}
+
 async function readBody(request) {
   const chunks = [];
   let size = 0;
@@ -54,11 +64,13 @@ export function createNodeControlProxy({ upstreamBaseUrl, bearerToken, contractR
     const operation = operations.find((candidate) => candidate.method === request.method && candidate.regex.test(pathname));
     if (!operation) return problem(response, 404, 'CONSOLE_PROXY_ROUTE_NOT_ALLOWED', 'Route not allowed', 'The requested method and path are outside the frozen public Node Control contract.');
     try {
+      const cursor = eventCursor(targetUrl, pathname);
       const headers = new Headers({ authorization: `Bearer ${bearerToken}` });
       for (const name of REQUEST_HEADERS) {
         const value = request.headers[name];
         if (typeof value === 'string') headers.set(name, value);
       }
+      if (cursor !== undefined) headers.set('last-event-id', cursor);
       const body = ['GET', 'HEAD'].includes(request.method) ? undefined : await readBody(request);
       const upstreamPath = `${upstreamBaseUrl.pathname.replace(/\/$/, '')}${pathname}${targetUrl.search}`;
       const upstream = new URL(upstreamPath, upstreamBaseUrl.origin);
@@ -77,7 +89,9 @@ export function createNodeControlProxy({ upstreamBaseUrl, bearerToken, contractR
       Readable.fromWeb(upstreamResponse.body).pipe(response);
     } catch (error) {
       const status = Number(error?.status) || 502;
-      return problem(response, status, status === 413 ? 'CONSOLE_PROXY_BODY_TOO_LARGE' : 'CONSOLE_PROXY_UPSTREAM_FAILED', status === 413 ? 'Request too large' : 'Node Control upstream failed', error instanceof Error ? error.message : 'The upstream request failed.');
+      const code = status === 413 ? 'CONSOLE_PROXY_BODY_TOO_LARGE' : status === 400 ? 'CONSOLE_PROXY_EVENT_CURSOR_INVALID' : 'CONSOLE_PROXY_UPSTREAM_FAILED';
+      const title = status === 413 ? 'Request too large' : status === 400 ? 'Invalid event cursor' : 'Node Control upstream failed';
+      return problem(response, status, code, title, error instanceof Error ? error.message : 'The upstream request failed.');
     }
   };
 }

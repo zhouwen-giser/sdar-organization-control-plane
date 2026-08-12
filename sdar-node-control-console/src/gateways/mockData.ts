@@ -301,6 +301,7 @@ export const healthySnapshot: GatewaySnapshot = {
     capability, readiness, a2aExposure, agentCard, task, operation, audit, event,
   },
   nodeEvents,
+  eventStream: { status: 'connected', reconnectAttempts: 0, lastEventId: nodeEvents[0]?.eventId },
 };
 
 export function cloneSnapshot(): GatewaySnapshot {

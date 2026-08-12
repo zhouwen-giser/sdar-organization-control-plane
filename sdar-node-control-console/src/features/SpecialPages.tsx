@@ -4,6 +4,7 @@ import { CONTRACT_OPERATIONS, CONTRACT_STATUS, CONTRACT_VERSION, OPENAPI_SHA256 
 import type { RecordKind, RoleId, Scope } from '../domain';
 import { navigate } from '../routes';
 import { ROLE_LABELS, ROLE_SCOPES, canInvoke, operationLabel, requiredScope } from '../gateways/operationPolicy';
+import { nodeControlGateway } from '../gateways/factory';
 import { getOperation, useConsole, useGatewaySnapshot, useRecord } from '../state/ConsoleState';
 import { Badge, Button, Callout, DefinitionList, EmptyState, JsonViewer, MetricCard, OperationAction, Panel, SearchField, SelectField, Tabs, formatTime } from '../components/ui';
 import { DetailPage } from './DetailPage';
@@ -66,10 +67,10 @@ export function EvidenceExportPage({ edit = false }: { edit?: boolean }) {
 
 export function EventsPage() {
   const snapshot = useGatewaySnapshot();
-  const [connected, setConnected] = useState(true);
-  return <div className="page-stack"><section className="page-intro"><div><span className="eyebrow">GET /api/v1/events · text/event-stream</span><h2>Node Event Stream</h2><p>节点事件用于提示 Aggregate 发生变化；消费者收到后应重新 GET 资源。</p></div><div className="stream-state"><span className={`health-orb ${connected ? 'healthy' : 'degraded'}`} /><strong>{connected ? 'SSE 已连接' : 'SSE 已断开'}</strong><Button variant="ghost" onClick={() => setConnected((value) => !value)}>{connected ? '断开模拟' : '重新连接'}</Button></div></section>
+  const connected = snapshot.eventStream?.status === 'connected';
+  return <div className="page-stack"><section className="page-intro"><div><span className="eyebrow">GET /api/v1/events · text/event-stream</span><h2>Node Event Stream</h2><p>节点事件用于提示 Aggregate 发生变化；消费者收到后应重新 GET 资源。</p></div><div className="stream-state"><span className={`health-orb ${connected ? 'healthy' : 'degraded'}`} /><strong>{connected ? 'SSE 已连接' : `SSE ${snapshot.eventStream?.status ?? '未连接'}`}</strong><small>{snapshot.eventStream?.lastEventId ? `Cursor ${snapshot.eventStream.lastEventId}` : '等待事件游标'}</small></div></section>
     <Callout title="Event is a hint">事件不是审计记录、遥测事实或资源完整快照。UI 只用它触发刷新和显示变化提示。</Callout>
-    <Panel title="最近事件" subtitle={`${snapshot.nodeEvents.length} 条固定场景事件`} actions={<Button variant="ghost"><RefreshCcw size={15} />重新 GET 资源</Button>}><div className="event-stream">{snapshot.records.event.map((item) => <article key={item.id}><div className="event-rail"><span /><small>{formatTime(item.updatedAt)}</small></div><div className="event-card"><header><Radio size={16} /><strong>{item.name}</strong><Badge value={item.status} /></header><p>{item.summary}</p><div className="event-meta"><code>{String(item.fields.aggregateType)}:{String(item.fields.aggregateId)}@{String(item.fields.aggregateRevision)}</code><span>{String(item.fields.correlationId)}</span></div></div></article>)}</div></Panel>
+    <Panel title="最近事件" subtitle={`${snapshot.nodeEvents.length} 条实时事件提示`} actions={<Button variant="ghost" onClick={() => void nodeControlGateway.refreshOverview?.()}><RefreshCcw size={15} />重新 GET 权威资源</Button>}><div className="event-stream">{snapshot.records.event.map((item) => <article key={item.id}><div className="event-rail"><span /><small>{formatTime(item.updatedAt)}</small></div><div className="event-card"><header><Radio size={16} /><strong>{item.name}</strong><Badge value={item.status} /></header><p>{item.summary}</p><div className="event-meta"><code>{String(item.fields.aggregateType)}:{String(item.fields.aggregateId)}@{String(item.fields.aggregateRevision)}</code><span>{String(item.fields.correlationId)}</span></div></div></article>)}</div></Panel>
   </div>;
 }
 

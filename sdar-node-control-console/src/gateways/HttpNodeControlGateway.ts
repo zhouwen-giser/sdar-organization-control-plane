@@ -1,4 +1,4 @@
-import { CONTRACT_OPERATIONS, type ContractOperation } from '../api/generated/contract';
+import { CONTRACT_OPERATIONS, type ContractOperation, type NodeEventEnvelope } from '../api/generated/contract';
 import type {
   CommandInput,
   CommandReceipt,
@@ -11,6 +11,12 @@ import type {
 import { ConsoleError } from '../domain';
 import type { NodeControlGateway } from './contracts';
 import { mapLiveCommand } from './liveCommandMap';
+import {
+  LiveNodeEventStream,
+  type LiveEventSource,
+  type LiveEventSourceFactory,
+  type LiveEventStreamState,
+} from './liveEventStream';
 import { LIVE_RESOURCES, mapLiveResource, pageItems } from './liveResourceMap';
 
 export interface NodeControlResponse<T> {
@@ -151,21 +157,37 @@ function emptyLiveSnapshot(): GatewaySnapshot {
     },
     records,
     nodeEvents: [],
+    eventStream: { status: 'disconnected', reconnectAttempts: 0 },
   };
 }
 
 export class HttpNodeControlGateway implements NodeControlGateway {
   private snapshot = emptyLiveSnapshot();
   private readonly listeners = new Set<() => void>();
+  private eventStream?: LiveNodeEventStream;
+  private readonly pendingEventRefreshes = new Set<RecordKind | 'overview'>();
+  private eventRefreshTimer?: ReturnType<typeof setTimeout>;
 
-  constructor(readonly client = new NodeControlHttpClient(), options: { autoRefresh?: boolean } = {}) {
-    if (options.autoRefresh !== false) void this.refreshSnapshot().catch(() => undefined);
+  constructor(readonly client = new NodeControlHttpClient(), options: { autoRefresh?: boolean; eventSourceFactory?: LiveEventSourceFactory; reconnectDelayMs?: number } = {}) {
+    if (options.autoRefresh !== false) {
+      void this.refreshSnapshot().catch(() => undefined);
+      const factory = options.eventSourceFactory ?? defaultEventSourceFactory();
+      if (factory) {
+        this.eventStream = new LiveNodeEventStream({
+          factory,
+          onEvent: (event) => this.acceptNodeEvent(event),
+          onState: (state) => this.setEventStreamState(state),
+          reconnectDelayMs: options.reconnectDelayMs,
+        });
+      }
+    }
   }
 
   getSnapshot() { return this.snapshot; }
   subscribe(listener: () => void) { this.listeners.add(listener); return () => this.listeners.delete(listener); }
   setScenario(_scenario: ScenarioId) {}
   reset() { void this.refreshSnapshot().catch(() => undefined); }
+  disconnectEventStream() { this.eventStream?.stop(); }
   async refreshOverview() {
     const kinds: RecordKind[] = ['configuration', 'mcpBinding', 'capability', 'readiness', 'task', 'operation', 'audit'];
     for (const kind of kinds) {
@@ -285,6 +307,62 @@ export class HttpNodeControlGateway implements NodeControlGateway {
     this.replaceRecords(kind, [record, ...records]);
   }
 
+  private setEventStreamState(eventStream: LiveEventStreamState) {
+    if (JSON.stringify(this.snapshot.eventStream) === JSON.stringify(eventStream)) return;
+    this.snapshot = { ...this.snapshot, revision: this.snapshot.revision + 1, eventStream };
+    this.emit();
+  }
+
+  private acceptNodeEvent(event: NodeEventEnvelope) {
+    const record: ConsoleRecord = {
+      id: event.eventId,
+      name: event.eventType,
+      status: 'info',
+      summary: `${event.aggregateType}:${event.aggregateId} changed; authoritative GET scheduled.`,
+      revision: event.aggregateRevision,
+      updatedAt: event.occurredAt,
+      tags: [event.aggregateType, event.eventType],
+      fields: {
+        eventType: event.eventType,
+        aggregateType: event.aggregateType,
+        aggregateId: event.aggregateId,
+        aggregateRevision: event.aggregateRevision,
+        correlationId: event.correlationId,
+        dataClassification: event.dataClassification,
+        payload: event.payload,
+      },
+    };
+    const eventRecords = [record, ...this.snapshot.records.event.filter((item) => item.id !== event.eventId)].slice(0, 200);
+    const nodeEvents = [event, ...this.snapshot.nodeEvents.filter((item) => item.eventId !== event.eventId)].slice(0, 200);
+    this.snapshot = {
+      ...this.snapshot,
+      revision: this.snapshot.revision + 1,
+      records: { ...this.snapshot.records, event: eventRecords },
+      nodeEvents,
+    };
+    this.emit();
+    for (const target of authoritativeRefreshTargets(event.eventType)) this.pendingEventRefreshes.add(target);
+    if (this.eventRefreshTimer === undefined) {
+      this.eventRefreshTimer = setTimeout(() => {
+        this.eventRefreshTimer = undefined;
+        void this.flushEventRefreshes();
+      }, 50);
+    }
+  }
+
+  private async flushEventRefreshes() {
+    const targets = [...this.pendingEventRefreshes];
+    this.pendingEventRefreshes.clear();
+    for (const target of targets) {
+      try {
+        if (target === 'overview') await this.refreshSnapshot();
+        else await this.list(target);
+      } catch {
+        // The event is only a hint. The next page query or event will retry the authoritative GET.
+      }
+    }
+  }
+
   private async refreshSnapshot() {
     const profileRequest = this.client.request<Record<string, unknown>>({ method: 'GET', path: '/api/v1/node' });
     const healthRequest = this.client.request<Record<string, unknown>>({ method: 'GET', path: '/api/v1/node/health' });
@@ -359,4 +437,26 @@ export class HttpNodeControlGateway implements NodeControlGateway {
     };
     this.emit();
   }
+}
+
+function defaultEventSourceFactory(): LiveEventSourceFactory | undefined {
+  if (typeof globalThis.EventSource !== 'function') return undefined;
+  return (url) => new globalThis.EventSource(url) as unknown as LiveEventSource;
+}
+
+function authoritativeRefreshTargets(eventType: string): readonly (RecordKind | 'overview')[] {
+  if (eventType === 'node.profile.changed' || eventType === 'node.health.changed' || eventType === 'node.telemetry_export.status_changed') return ['overview'];
+  if (eventType.startsWith('node.configuration.')) return ['configuration'];
+  if (eventType === 'node.llm.provider_changed') return ['llmProvider', 'modelRoute'];
+  if (eventType === 'node.smpp.source_changed') return ['smppSource'];
+  if (eventType === 'node.mcp.provider_binding_changed') return ['mcpBinding', 'mcpCandidate'];
+  if (eventType === 'node.skill.version_changed') return ['skill'];
+  if (eventType === 'node.plan_template.version_changed') return ['planTemplate'];
+  if (eventType.startsWith('node.capability.version_')) return ['capability'];
+  if (eventType === 'node.capability.readiness_changed') return ['readiness'];
+  if (eventType === 'node.a2a.exposure_changed') return ['a2aExposure'];
+  if (eventType === 'node.agent_card.activated') return ['agentCard'];
+  if (eventType === 'node.task.capability_bound') return ['task'];
+  if (eventType === 'node.management_operation.completed') return ['operation'];
+  return ['overview'];
 }

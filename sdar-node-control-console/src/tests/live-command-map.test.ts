@@ -47,7 +47,7 @@ describe('live command map', () => {
 
   it('fails closed for commands without an operation-specific live mapping', async () => {
     await expect(mapLiveCommand({
-      operation: operation('createLlmProviderDraft'), target: { type: 'llmProvider', id: 'provider-1', revision: 1 },
+      operation: operation('importSkillPackage'), target: { type: 'skill', id: 'skill-1', revision: 1 },
       reason: 'Refresh readiness.', idempotencyKey: 'refresh-1',
     })).rejects.toEqual(expect.objectContaining({ status: 501, code: 'CONSOLE_LIVE_COMMAND_NOT_MAPPED' }));
   });
@@ -82,6 +82,37 @@ describe('live command map', () => {
       method: 'POST', path: '/api/v1/evidence-export/replays',
       body: { scope: 'record', recordId: 'evidence_deadbeef', reason: 'Replay one retained record.' },
       responseKind: 'operation',
+    });
+  });
+
+  it('maps real SMPP synchronization and MCP refresh to exact public commands', async () => {
+    await expect(mapLiveCommand({
+      operation: operation('syncSmppSource'), target: { type: 'smppSource', id: 'home-lab-smpp' },
+      reason: 'Refresh the real SMPP registry snapshot.', idempotencyKey: 'p07-sync',
+    })).resolves.toEqual({
+      method: 'POST', path: '/api/v1/smpp-sources/home-lab-smpp/sync',
+      body: { reason: 'Refresh the real SMPP registry snapshot.' }, responseKind: 'operation',
+    });
+    await expect(mapLiveCommand({
+      operation: operation('refreshMcpProviderBinding'), target: { type: 'mcpBinding', id: 'mcp-binding-ha-light-lab' },
+      reason: 'Refresh the governed MCP catalog.', idempotencyKey: 'p07-refresh',
+    })).resolves.toEqual({
+      method: 'POST', path: '/api/v1/mcp-provider-bindings/mcp-binding-ha-light-lab/refresh',
+      body: { reason: 'Refresh the governed MCP catalog.' }, responseKind: 'operation',
+    });
+  });
+
+  it('bounds a single-candidate Model Route to one attempt', async () => {
+    await expect(mapLiveCommand({
+      operation: operation('createModelRouteDraft'), target: { type: 'modelRoute', id: 'route-planning' },
+      reason: 'Create a deterministic planning route.', idempotencyKey: 'p07-route',
+      payload: { stage: 'planning', primary: 'provider-local:structured-fixture', fallbacks: [] },
+    })).resolves.toMatchObject({
+      body: {
+        primary: { providerId: 'provider-local', modelId: 'structured-fixture' },
+        fallbacks: [],
+        budgetPolicy: { maxAttempts: 1 },
+      },
     });
   });
 });

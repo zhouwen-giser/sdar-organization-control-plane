@@ -315,6 +315,11 @@ export class HttpNodeControlGateway implements NodeControlGateway {
       this.emit();
       return { mode: 'synchronous', acceptedAt, record };
     }
+    if (mapping.responseKind === 'record' && mapping.recordKind) {
+      const record = mapLiveResource(mapping.recordKind, response.data, response);
+      this.upsertRecord(mapping.recordKind, record);
+      return { mode: 'synchronous', acceptedAt, record };
+    }
     return { mode: 'synchronous', acceptedAt };
   }
 

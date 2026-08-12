@@ -17,6 +17,11 @@ const EVIDENCE_OPERATIONS = new Set([
   'retryEvidenceDeadLetter',
   'reconcileEvidenceCoverage',
 ]);
+const SUPPLY_OPERATIONS = new Set([
+  'createLlmProviderDraft', 'validateLlmProvider', 'createModelRouteDraft',
+  'createSmppSourceDraft', 'syncSmppSource', 'importMcpProviderBinding',
+  'refreshMcpProviderBinding', 'suspendMcpProviderBinding', 'removeMcpProviderBinding',
+]);
 export const REQUIRED_EVIDENCE_FAMILIES = [
   'runtime', 'skill', 'mcp_task', 'capability', 'experience', 'replay', 'artifact', 'node_control', 'evidence',
 ] as const;
@@ -26,11 +31,12 @@ export interface LiveCommandMapping {
   path: string;
   body: unknown;
   currentResourcePath?: string;
-  responseKind?: 'configuration' | 'evidenceConfiguration' | 'operation';
+  responseKind?: 'configuration' | 'evidenceConfiguration' | 'record' | 'operation';
+  recordKind?: 'llmProvider' | 'modelRoute' | 'smppSource';
 }
 
 export async function mapLiveCommand(input: CommandInput): Promise<LiveCommandMapping> {
-  if (!CONFIGURATION_OPERATIONS.has(input.operation.operationId) && input.operation.operationId !== READINESS_OPERATION && !EVIDENCE_OPERATIONS.has(input.operation.operationId)) {
+  if (!CONFIGURATION_OPERATIONS.has(input.operation.operationId) && input.operation.operationId !== READINESS_OPERATION && !EVIDENCE_OPERATIONS.has(input.operation.operationId) && !SUPPLY_OPERATIONS.has(input.operation.operationId)) {
     throw new ConsoleError({
       status: 501,
       code: 'CONSOLE_LIVE_COMMAND_NOT_MAPPED',
@@ -42,6 +48,7 @@ export async function mapLiveCommand(input: CommandInput): Promise<LiveCommandMa
   }
 
   if (EVIDENCE_OPERATIONS.has(input.operation.operationId)) return evidenceCommand(input);
+  if (SUPPLY_OPERATIONS.has(input.operation.operationId)) return supplyCommand(input);
 
   if (input.operation.operationId === READINESS_OPERATION) {
     const separator = input.target.id.lastIndexOf('@');
@@ -83,6 +90,98 @@ export async function mapLiveCommand(input: CommandInput): Promise<LiveCommandMa
     },
     responseKind: input.operation.operationId === 'validateConfigurationRevision' ? 'configuration' : 'operation',
   };
+}
+
+function supplyCommand(input: CommandInput): LiveCommandMapping {
+  const operationId = input.operation.operationId;
+  const payload = input.payload ?? {};
+  if (operationId === 'createLlmProviderDraft') {
+    return {
+      method: input.operation.method, path: input.operation.path,
+      body: {
+        providerId: requiredText(payload.providerId ?? input.target.id, 'providerId'),
+        providerType: requiredText(payload.providerType, 'providerType'),
+        baseUrl: requiredText(payload.baseUrl, 'baseUrl'),
+        credentialRef: requiredText(payload.credentialRef, 'credentialRef'),
+        models: [{
+          modelId: requiredText(payload.modelId, 'modelId'),
+          capabilities: ['structured_output', 'tool_calling'],
+          contextWindow: positiveInteger(payload.contextWindow, 32_768, 'contextWindow'), enabled: true,
+        }],
+        healthPolicy: { timeoutMs: 10_000, retryAttempts: 1, failureThreshold: 3, recoverySeconds: 60 },
+        rateLimitPolicy: { requestsPerMinute: 60, tokensPerMinute: 100_000, maxConcurrent: 4 },
+        status: 'draft', secretStatus: 'unknown', revision: 1,
+      },
+      responseKind: 'record', recordKind: 'llmProvider',
+    };
+  }
+  if (operationId === 'createModelRouteDraft') {
+    const fallbacks = Array.isArray(payload.fallbacks) ? payload.fallbacks.map((item) => providerModelRef(item, 'fallback')) : [];
+    return {
+      method: input.operation.method, path: input.operation.path,
+      body: {
+        routeId: requiredText(payload.routeId ?? input.target.id, 'routeId'),
+        stage: requiredText(payload.stage, 'stage'),
+        primary: providerModelRef(payload.primary, 'primary'),
+        fallbacks,
+        budgetPolicy: { selector: { scope: 'stage' }, timeoutMs: 30_000, maxAttempts: Math.min(2, fallbacks.length + 1), maxInputTokens: 32_768, maxOutputTokens: 8_192, maxCostUsd: 1, fallbackOn: ['unavailable', 'timeout', 'rate_limited', 'upstream_error'] },
+        status: 'draft', revision: 1,
+      },
+      responseKind: 'record', recordKind: 'modelRoute',
+    };
+  }
+  if (operationId === 'createSmppSourceDraft') {
+    return {
+      method: input.operation.method, path: input.operation.path,
+      body: {
+        smppSourceId: requiredText(payload.smppSourceId ?? input.target.id, 'smppSourceId'),
+        ...(payload.name ? { name: requiredText(payload.name, 'name') } : {}),
+        registryEndpoint: requiredText(payload.registryEndpoint, 'registryEndpoint'),
+        credentialRef: requiredText(payload.credentialRef, 'credentialRef'),
+        environment: requiredText(payload.environment ?? 'home_lab', 'environment'),
+        syncMode: requiredText(payload.syncMode ?? 'manual', 'syncMode'),
+        snapshotTtlSeconds: positiveInteger(payload.snapshotTtlSeconds, 3_600, 'snapshotTtlSeconds'),
+        lkgPolicy: requiredText(payload.lkgPolicy ?? 'allow_unexpired', 'lkgPolicy'),
+        status: 'draft', revision: 1,
+      },
+      responseKind: 'record', recordKind: 'smppSource',
+    };
+  }
+  if (operationId === 'importMcpProviderBinding') {
+    return {
+      method: input.operation.method, path: input.operation.path,
+      body: { reason: requiredText(input.reason, 'reason'), payload: {
+        bindingId: requiredText(payload.bindingId ?? input.target.id, 'bindingId'),
+        localServerId: requiredText(payload.localServerId, 'localServerId'),
+        originType: requiredText(payload.originType, 'originType'),
+        credentialRef: requiredText(payload.credentialRef, 'credentialRef'),
+        ...(payload.endpointRef ? { endpointRef: requiredText(payload.endpointRef, 'endpointRef') } : {}),
+        ...(payload.smppSourceId ? { smppSourceId: requiredText(payload.smppSourceId, 'smppSourceId') } : {}),
+        ...(payload.externalProviderId ? { externalProviderId: requiredText(payload.externalProviderId, 'externalProviderId') } : {}),
+        ...(payload.externalServerId ? { externalServerId: requiredText(payload.externalServerId, 'externalServerId') } : {}),
+        ...(payload.registryRevision ? { registryRevision: positiveInteger(payload.registryRevision, 1, 'registryRevision') } : {}),
+        ...(payload.registryChecksum ? { registryChecksum: requiredText(payload.registryChecksum, 'registryChecksum') } : {}),
+      } },
+      responseKind: 'operation',
+    };
+  }
+  const resourceId = encodeURIComponent(input.target.id);
+  const path = input.operation.path
+    .replace('{providerId}', resourceId)
+    .replace('{smppSourceId}', resourceId)
+    .replace('{bindingId}', resourceId);
+  return {
+    method: input.operation.method, path,
+    body: { reason: requiredText(input.reason, 'reason'), ...(input.expectedRevision === undefined ? {} : { expectedRevision: input.expectedRevision }), ...(input.payload === undefined ? {} : { payload: input.payload }) },
+    responseKind: 'operation',
+  };
+}
+
+function providerModelRef(value: unknown, field: string) {
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value;
+  const [providerId, modelId] = requiredText(value, field).split(':');
+  if (!providerId || !modelId) throw invalidPayload(`${field} must use providerId:modelId.`);
+  return { providerId, modelId };
 }
 
 function evidenceCommand(input: CommandInput): LiveCommandMapping {

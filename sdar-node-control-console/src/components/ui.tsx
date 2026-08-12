@@ -168,7 +168,10 @@ function renderColumn(record: ConsoleRecord, key: string): ReactNode {
 
 function renderValue(value: unknown): ReactNode {
   if (value == null || value === '') return <span className="muted">—</span>;
-  if (Array.isArray(value)) return <div className="tag-list">{value.map((item) => <span key={String(item)}>{String(item)}</span>)}</div>;
+  if (Array.isArray(value)) return <div className="tag-list">{value.map((item, index) => {
+    const rendered = typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item);
+    return <span key={`${index}:${rendered}`}>{rendered}</span>;
+  })}</div>;
   if (typeof value === 'object') return <code>{JSON.stringify(value)}</code>;
   if (typeof value === 'boolean') return value ? '是' : '否';
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) return formatTime(value);

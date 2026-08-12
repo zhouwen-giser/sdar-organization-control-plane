@@ -84,7 +84,7 @@ export function Callout({ title, children, tone = 'info' }: { title: string; chi
 }
 
 export function OperationAction({ operationId, target, label, variant = 'secondary', onAccepted }: {
-  operationId: string; target: { type: string; id: string; revision?: number | string }; label?: string; variant?: 'primary' | 'secondary' | 'danger' | 'ghost'; onAccepted?(): void;
+  operationId: string; target: { type: string; id: string; revision?: number | string; etag?: string }; label?: string; variant?: 'primary' | 'secondary' | 'danger' | 'ghost'; onAccepted?(): void;
 }) {
   const operation = getOperation(operationId);
   const { canInvoke } = useConsole();
@@ -97,7 +97,7 @@ export function OperationAction({ operationId, target, label, variant = 'seconda
 }
 
 export function CommandDialog({ operation, target, onClose, onAccepted }: {
-  operation: ContractOperation; target: { type: string; id: string; revision?: number | string }; onClose(): void; onAccepted?(): void;
+  operation: ContractOperation; target: { type: string; id: string; revision?: number | string; etag?: string }; onClose(): void; onAccepted?(): void;
 }) {
   const { execute } = useConsole();
   const highRisk = isHighRisk(operation.operationId);

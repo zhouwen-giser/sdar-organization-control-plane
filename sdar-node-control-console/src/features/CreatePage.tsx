@@ -13,7 +13,7 @@ const FIELDS: Partial<Record<RecordKind, FieldSpec[]>> = {
   configuration: [
     { key: 'configurationId', label: 'Configuration ID', placeholder: 'runtime-policy' },
     { key: 'name', label: '显示名称', placeholder: 'Runtime 执行策略' },
-    { key: 'targetType', label: '目标类型', placeholder: 'runtime', type: 'select', options: ['node', 'runtime', 'task_policy', 'evidence_export'] },
+    { key: 'targetType', label: '目标类型', placeholder: 'runtime_policy', type: 'select', options: ['node', 'llm_provider', 'model_route', 'smpp_source', 'mcp_provider_binding', 'telemetry_link', 'runtime_policy'] },
     { key: 'targetId', label: '目标 ID', placeholder: 'runtime-primary' },
     { key: 'applyMode', label: '应用模式', placeholder: 'hot_reload', type: 'select', options: ['hot_reload', 'new_task_only', 'reconnect_required', 'restart_required', 'immutable'] },
     { key: 'content', label: '配置内容（JSON）', placeholder: '{\n  "maxConcurrentTasks": 4\n}', type: 'textarea' },
@@ -63,6 +63,7 @@ export function CreatePage({ kind }: { kind: RecordKind }) {
   const [submitting, setSubmitting] = useState(false);
   const [receipt, setReceipt] = useState<{ mode: string; operationId?: string }>();
   const [error, setError] = useState('');
+  const idempotencyKey = useMemo(() => `console-${operation.operationId}-${crypto.randomUUID?.() ?? Date.now()}`, [operation.operationId]);
   const allowed = canInvoke(operation);
   const invalidSecret = useMemo(() => fields.some((field) => field.secretRef && values[field.key] && !values[field.key].startsWith('secret://')), [fields, values]);
   const valid = fields.filter((field) => ['configurationId', 'providerId', 'routeId', 'smppSourceId', 'id', 'name'].includes(field.key)).some((field) => values[field.key].trim()) && reason.trim().length >= 5 && !invalidSecret;
@@ -73,7 +74,7 @@ export function CreatePage({ kind }: { kind: RecordKind }) {
     for (const field of fields.filter((item) => item.type === 'number')) payload[field.key] = Number(values[field.key]);
     if (typeof payload.fallbacks === 'string') payload.fallbacks = payload.fallbacks.split(',').map((item) => item.trim()).filter(Boolean);
     try {
-      const result = await execute({ operation, target: { type: kind, id: String(payload.id ?? payload.configurationId ?? payload.providerId ?? payload.routeId ?? payload.smppSourceId ?? 'new-draft') }, reason, idempotencyKey: `console-${operation.operationId}-${Date.now()}`, payload });
+      const result = await execute({ operation, target: { type: kind, id: String(payload.id ?? payload.configurationId ?? payload.providerId ?? payload.routeId ?? payload.smppSourceId ?? 'new-draft') }, reason, idempotencyKey, payload });
       setReceipt({ mode: result.mode, operationId: result.operation?.operationId });
     } catch (caught) { setError(caught instanceof Error ? caught.message : '提交失败'); }
     finally { setSubmitting(false); }

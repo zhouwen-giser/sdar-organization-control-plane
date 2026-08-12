@@ -62,7 +62,7 @@ export interface EvidenceSnapshot {
 
 export interface CommandInput {
   operation: ContractOperation;
-  target: { type: string; id: string; revision?: number | string };
+  target: { type: string; id: string; revision?: number | string; etag?: string };
   reason: string;
   expectedRevision?: number;
   idempotencyKey: string;

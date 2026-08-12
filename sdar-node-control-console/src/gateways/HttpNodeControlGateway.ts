@@ -10,6 +10,7 @@ import type {
 } from '../domain';
 import { ConsoleError } from '../domain';
 import type { NodeControlGateway } from './contracts';
+import { mapLiveCommand } from './liveCommandMap';
 import { LIVE_RESOURCES, mapLiveResource, pageItems } from './liveResourceMap';
 
 export interface NodeControlResponse<T> {
@@ -153,17 +154,6 @@ function emptyLiveSnapshot(): GatewaySnapshot {
   };
 }
 
-function mappingPending() {
-  return new ConsoleError({
-    status: 501,
-    code: 'CONSOLE_LIVE_RESOURCE_MAPPING_PENDING',
-    title: 'Live resource mapping is not ready',
-    detail: 'The live transport is active, but this Console resource has not yet been mapped to its frozen Node Control operation.',
-    correlationId: 'console-local',
-    retryable: false,
-  });
-}
-
 export class HttpNodeControlGateway implements NodeControlGateway {
   private snapshot = emptyLiveSnapshot();
   private readonly listeners = new Set<() => void>();
@@ -234,7 +224,53 @@ export class HttpNodeControlGateway implements NodeControlGateway {
       throw error;
     }
   }
-  execute(_input: CommandInput): Promise<CommandReceipt> { return Promise.reject(mappingPending()); }
+  async execute(input: CommandInput): Promise<CommandReceipt> {
+    const mapping = await mapLiveCommand(input);
+    let etag = input.target.etag;
+    if (!etag && mapping.currentResourcePath) {
+      const current = await this.client.request<unknown>({ method: 'GET', path: mapping.currentResourcePath });
+      etag = current.etag;
+      if (!etag) {
+        throw new ConsoleError({
+          status: 502,
+          code: 'CONSOLE_CURRENT_ETAG_MISSING',
+          title: 'Current resource ETag is missing',
+          detail: 'The authoritative resource did not return an ETag required for optimistic concurrency.',
+          correlationId: current.correlationId ?? 'unknown',
+          retryable: true,
+        });
+      }
+    }
+    const response = await this.client.request<unknown>({
+      method: mapping.method,
+      path: mapping.path,
+      body: mapping.body,
+      ...(etag ? { etag } : {}),
+      idempotencyKey: input.idempotencyKey,
+    });
+    const acceptedAt = new Date().toISOString();
+    if (mapping.responseKind === 'operation') {
+      const operation = response.data as CommandReceipt['operation'];
+      if (!operation || typeof operation.operationId !== 'string') {
+        throw new ConsoleError({
+          status: 502,
+          code: 'CONSOLE_OPERATION_RESPONSE_INVALID',
+          title: 'Management Operation response is invalid',
+          detail: 'A command mapped as asynchronous did not return a ManagementOperation.',
+          correlationId: response.correlationId ?? 'unknown',
+          retryable: false,
+        });
+      }
+      this.upsertRecord('operation', mapLiveResource('operation', operation, response));
+      return { mode: 'operation', acceptedAt: operation.createdAt, operation };
+    }
+    if (mapping.responseKind === 'configuration') {
+      const record = mapLiveResource('configuration', response.data, response);
+      this.upsertRecord('configuration', record);
+      return { mode: 'synchronous', acceptedAt, record };
+    }
+    return { mode: 'synchronous', acceptedAt };
+  }
 
   private emit() { this.listeners.forEach((listener) => listener()); }
 

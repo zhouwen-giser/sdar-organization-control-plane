@@ -41,6 +41,11 @@ Machine evidence: `p07-live-supply-smoke.json`.
 
 `2c8c00ccbf41e342eba95c43bbcec1b06772407a`
 
+## Evidence Commit and Remote Verification
+
+- Evidence commit: `eb0213292006c64069cd89180d448b6ed732313d`
+- Remote branch matched the evidence commit before phase closure.
+
 ## Status
 
 `REAL_SMPP_INTEROP_PASSED`

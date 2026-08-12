@@ -1,6 +1,6 @@
 {
   "goalId": "SDAR-SINGLE-NODE-CONSOLE-LIVE-INTEGRATION",
-  "status": "EVIDENCE_V141_UI_PASSED",
+  "status": "REAL_SMPP_INTEROP_PASSED",
   "implementationRepo": "zhouwen-giser/sdar-organization-control-plane",
   "branch": "feature/single-node-console-live-integration",
   "sourceLocks": {
@@ -49,8 +49,14 @@
       "implementationCommit": "733ac703ae943a3a4781541605f0b9c5fc0022cb",
       "evidenceCommit": "78bac7ac9680a74a3eab1ce53050c8fe6cdd4d96",
       "report": "reports/single-node-live-integration/P06-evidence-v141.md"
+    },
+    "P07": {
+      "status": "REAL_SMPP_INTEROP_PASSED",
+      "implementationCommit": "2c8c00ccbf41e342eba95c43bbcec1b06772407a",
+      "evidenceCommit": "eb0213292006c64069cd89180d448b6ed732313d",
+      "report": "reports/single-node-live-integration/P07-real-smpp-interop.md"
     }
   },
   "externalBlockers": [],
-  "updatedAt": "2026-08-12T01:17:00.000Z"
+  "updatedAt": "2026-08-12T01:42:00.000Z"
 }

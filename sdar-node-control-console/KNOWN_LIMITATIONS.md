@@ -1,8 +1,7 @@
 # Known Limitations
 
-1. The frozen backend package explicitly declares implementation pending. The delivery therefore uses a deterministic Contract-first Local Validation Gateway and does not claim live backend integration.
-2. Authentication, token acquisition and session management are not implemented. The role switcher validates UI scope behavior only.
-3. Node Events are locally simulated; no real SSE connection is opened.
-4. Commands and created records live in browser memory and reset on refresh.
-5. No Evidence Analytics, ClickHouse or Evaluation query is implemented, by protocol design. Evidence pages manage export configuration, delivery metadata and governed recovery only.
-6. Browser validation was executed with the installed Chromium through CDP against the final Vite bundle.
+1. `EXT-SDAR-NODE-CONTROL-TASK-CONTROL-001`: the selected SDAR local integration branch exposes Task list/detail/binding reads but returns HTTP 404 `RESOURCE_NOT_FOUND` for frozen pause/resume/cancel routes. Console command mappings are complete; SDAR owns the missing implementation.
+2. The Goal uses a fixed loopback deployment identity and server-only bearer token. Interactive login, token acquisition and session management are intentionally not implemented.
+3. Evidence pages manage v1.4.1 export configuration, delivery metadata, issue/dead-letter state and recovery. Evidence Analytics, ClickHouse and Evaluation queries are not Console surfaces.
+4. The repository `validate:full` browser wrapper expects a system `chromium` executable. The application browser completed the real P09 core journey, but the local wrapper remains environment-dependent when Chromium is absent from PATH.
+5. Current Runtime Readiness is time-bounded and may show `PROVIDER_AVAILABILITY_EXPIRED` after the one-minute authority window. The Console intentionally displays that fail-closed state and never promotes stale data.

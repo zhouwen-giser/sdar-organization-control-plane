@@ -1,0 +1,89 @@
+{
+  "goalId": "SDAR-SINGLE-NODE-CONSOLE-LIVE-INTEGRATION",
+  "status": "BLOCKED_EXTERNAL_SDAR",
+  "implementationRepo": "zhouwen-giser/sdar-organization-control-plane",
+  "branch": "feature/single-node-console-live-integration",
+  "sourceLocks": {
+    "console": "52ee82f336ed221dcd85c4921c345898a5b8b29c",
+    "sdar": "816f25f86910a94cba260e9f84e98de92074b75f",
+    "smpp": "99302cf8d7871b677147c39530701790f8b7a051"
+  },
+  "phases": {
+    "P00": {
+      "status": "P00_COMPLETE",
+      "evidenceCommit": "15e592dd78bd4c679454f992aaa86bbf9bb251bd",
+      "report": "reports/single-node-live-integration/P00-baseline.md"
+    },
+    "P01": {
+      "status": "CONTRACT_CURRENT",
+      "implementationCommit": "032c5df44b126d1bf6d593aa68fcbb3aa8bb2e07",
+      "evidenceCommit": "7d0a5f3031cb59da53c76c023931f17f07db15a2",
+      "report": "reports/single-node-live-integration/P01-contract-current.md"
+    },
+    "P02": {
+      "status": "LIVE_TRANSPORT_READY",
+      "implementationCommit": "347cad295c5691e07637ad40ab55ff789d86fc16",
+      "evidenceCommit": "83a42713fa65fce2ade300d2a2fdc0340a6a44d3",
+      "report": "reports/single-node-live-integration/P02-live-transport-ready.md"
+    },
+    "P03": {
+      "status": "LIVE_READ_VERTICAL_PASSED",
+      "implementationCommit": "c059302b7c785407ccb4a8041ea35f50b4c77840",
+      "evidenceCommit": "5a546f4d7b2f3c5b6fa5a01eb7a6ae762e90396b",
+      "report": "reports/single-node-live-integration/P03-live-read-vertical.md"
+    },
+    "P04": {
+      "status": "LIVE_COMMAND_SEMANTICS_PASSED",
+      "implementationCommit": "ecd1b8b0c6143a3e2e855a82366d3d0440cd23b4",
+      "evidenceCommit": "c7c4502592834abccb933338b136b1396729a4df",
+      "report": "reports/single-node-live-integration/P04-live-command-semantics.md"
+    },
+    "P05": {
+      "status": "LIVE_SSE_PASSED",
+      "implementationCommit": "efb3611950049ac79f25d0998ae5f377c91a3f45",
+      "evidenceCommit": "3850e78897b5e024333eb17382b50ca386f6efe4",
+      "report": "reports/single-node-live-integration/P05-live-sse.md"
+    },
+    "P06": {
+      "status": "EVIDENCE_V141_UI_PASSED",
+      "implementationCommit": "733ac703ae943a3a4781541605f0b9c5fc0022cb",
+      "evidenceCommit": "78bac7ac9680a74a3eab1ce53050c8fe6cdd4d96",
+      "report": "reports/single-node-live-integration/P06-evidence-v141.md"
+    },
+    "P07": {
+      "status": "REAL_SMPP_INTEROP_PASSED",
+      "implementationCommit": "2c8c00ccbf41e342eba95c43bbcec1b06772407a",
+      "evidenceCommit": "eb0213292006c64069cd89180d448b6ed732313d",
+      "report": "reports/single-node-live-integration/P07-real-smpp-interop.md"
+    },
+    "P08": {
+      "status": "BLOCKED_EXTERNAL_SDAR",
+      "implementationCommit": "8cbf75ed990d5f23fa50af83eda1d136439b41eb",
+      "evidenceCommit": "64736d4eb4b4fbe6276685d201cb49e7820c0810",
+      "report": "reports/single-node-live-integration/P08-capability-a2a-task-vertical.md"
+    },
+    "P09": {
+      "status": "BLOCKED_EXTERNAL_SDAR",
+      "implementationCommit": "6a62eb514c365bf6e7ae74c66e835cf9ff569412",
+      "report": "reports/single-node-live-integration/P09-browser-live-e2e.md"
+    },
+    "P10": {
+      "status": "SECURITY_RECOVERY_PASSED",
+      "implementationCommit": "46e5b41311fdbf55a4814fc704efb27df4202ca1",
+      "report": "reports/single-node-live-integration/P10-security-recovery.md"
+    },
+    "P11": {
+      "status": "BLOCKED_EXTERNAL_SDAR",
+      "report": "reports/single-node-live-integration/P11-final-acceptance.md"
+    }
+  },
+  "externalBlockers": [
+    {
+      "code": "EXT-SDAR-NODE-CONTROL-TASK-CONTROL-001",
+      "owner": "skill-driven-agent-runtime",
+      "detail": "Frozen pauseTask, resumeTask and cancelTask routes return HTTP 404 RESOURCE_NOT_FOUND on the locked live Node Control API.",
+      "evidence": "reports/single-node-live-integration/p08-live-capability-a2a.json"
+    }
+  ],
+  "updatedAt": "2026-08-12T03:05:00.000Z"
+}

@@ -11,6 +11,7 @@ function renderAt(path: string) {
 afterEach(() => {
   cleanup();
   window.location.hash = '';
+  delete window.__SDAR_CONSOLE_CONFIG__;
 });
 
 describe('single-node console product experience', () => {
@@ -43,8 +44,21 @@ describe('single-node console product experience', () => {
 
   it('renders all operations in the traceability page', () => {
     renderAt('/contract');
-    expect(screen.getByText('85')).toBeInTheDocument();
+    expect(screen.getByText('94')).toBeInTheDocument();
     expect(screen.getByText('getNodeProfile')).toBeInTheDocument();
     expect(screen.getByText('publishConfigurationRevision')).toBeInTheDocument();
+    expect(screen.getByText('reconcileEvidenceCoverage')).toBeInTheDocument();
+  });
+
+  it('shows the fixed deployment identity instead of role and scenario controls in live mode', () => {
+    window.__SDAR_CONSOLE_CONFIG__ = {
+      gatewayMode: 'live',
+      activeDeploymentRole: 'node_operator',
+      securityClassification: 'LOOPBACK_SERVER_CREDENTIAL',
+    };
+    renderAt('/overview');
+    expect(screen.getByLabelText('Active Deployment Identity')).toHaveTextContent('节点运维员');
+    expect(screen.queryByText('场景', { selector: 'span' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
 });

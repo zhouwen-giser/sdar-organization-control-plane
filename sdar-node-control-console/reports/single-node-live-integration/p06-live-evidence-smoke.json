@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "observedAt": "2026-08-12T01:14:27.001Z",
+  "statusHttp": 200,
+  "deliveryStatus": "disabled",
+  "pendingRecords": 0,
+  "listCounts": {
+    "outbox": 20,
+    "sourceCheckpoints": 20,
+    "projectionIssues": 6,
+    "qualityIssues": 20,
+    "deadLetters": 0
+  },
+  "hasAdditionalPages": {
+    "outbox": true,
+    "sourceCheckpoints": true,
+    "projectionIssues": false,
+    "qualityIssues": true,
+    "deadLetters": false
+  },
+  "decimalSequencesPreservedAsStrings": true,
+  "canonicalPayloadReturned": false,
+  "episodeManifestHttp": 404,
+  "recoveryHttp": 202,
+  "recoveryReplayHttp": 202,
+  "recoveryOperationIdSha256": "631a9ed3b867ca702776038cc8731ff539d8a6d13569bb00dc8a7a6b6affe5c2",
+  "recoveryOperationStatus": "running",
+  "recoveryIdempotent": true,
+  "browserReceivedUpstreamAuthority": false
+}

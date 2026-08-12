@@ -6,6 +6,8 @@ import type {
 export interface NodeControlGateway {
   getSnapshot(): GatewaySnapshot;
   subscribe(listener: () => void): () => void;
+  refreshOverview?(): Promise<void>;
+  getEvidenceManifest?(episodeId: string): Promise<Record<string, unknown> | undefined>;
   setScenario(scenario: ScenarioId): void;
   list(kind: RecordKind, options?: QueryOptions): Promise<ConsoleRecord[]>;
   get(kind: RecordKind, id: string): Promise<ConsoleRecord | undefined>;

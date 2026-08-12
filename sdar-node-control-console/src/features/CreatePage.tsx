@@ -13,26 +13,30 @@ const FIELDS: Partial<Record<RecordKind, FieldSpec[]>> = {
   configuration: [
     { key: 'configurationId', label: 'Configuration ID', placeholder: 'runtime-policy' },
     { key: 'name', label: '显示名称', placeholder: 'Runtime 执行策略' },
-    { key: 'targetType', label: '目标类型', placeholder: 'runtime', type: 'select', options: ['node', 'runtime', 'task_policy', 'telemetry_export'] },
+    { key: 'targetType', label: '目标类型', placeholder: 'runtime_policy', type: 'select', options: ['node', 'llm_provider', 'model_route', 'smpp_source', 'mcp_provider_binding', 'telemetry_link', 'runtime_policy'] },
     { key: 'targetId', label: '目标 ID', placeholder: 'runtime-primary' },
     { key: 'applyMode', label: '应用模式', placeholder: 'hot_reload', type: 'select', options: ['hot_reload', 'new_task_only', 'reconnect_required', 'restart_required', 'immutable'] },
     { key: 'content', label: '配置内容（JSON）', placeholder: '{\n  "maxConcurrentTasks": 4\n}', type: 'textarea' },
   ],
   llmProvider: [
     { key: 'providerId', label: 'Provider ID', placeholder: 'llm-provider-01' }, { key: 'name', label: '显示名称', placeholder: 'Production LLM' },
-    { key: 'providerType', label: 'Provider 类型', placeholder: 'openai-compatible' }, { key: 'baseUrl', label: 'Base URL', placeholder: 'https://example.internal/v1', type: 'url' },
+    { key: 'providerType', label: 'Provider 类型', placeholder: 'openai_compatible', type: 'select', options: ['openai_compatible', 'anthropic', 'local'] }, { key: 'baseUrl', label: 'Base URL', placeholder: 'https://example.internal/v1', type: 'url' },
     { key: 'credentialRef', label: 'Credential Ref', placeholder: 'secret://llm/production', secretRef: true },
+    { key: 'modelId', label: 'Model ID', placeholder: 'structured-model' }, { key: 'contextWindow', label: 'Context Window', placeholder: '32768', type: 'number' },
   ],
   modelRoute: [
     { key: 'routeId', label: 'Route ID', placeholder: 'route-planning' }, { key: 'name', label: '显示名称', placeholder: 'Planning Route' },
-    { key: 'stage', label: '阶段', placeholder: 'planning', type: 'select', options: ['planning', 'execution', 'evaluation', 'fallback'] },
+    { key: 'stage', label: '阶段', placeholder: 'planning', type: 'select', options: ['understanding', 'planning', 'execution', 'evaluation', 'summary', 'embedding'] },
     { key: 'primary', label: '主模型引用', placeholder: 'llm-provider:model' }, { key: 'fallbacks', label: 'Fallback（逗号分隔）', placeholder: 'provider-a:model-x, provider-b:model-y' },
   ],
   smppSource: [
     { key: 'smppSourceId', label: 'Source ID', placeholder: 'smpp-production' }, { key: 'name', label: '名称', placeholder: 'Production SMPP Registry' },
     { key: 'registryEndpoint', label: 'Registry Endpoint', placeholder: 'https://smpp.example/api/registry', type: 'url' },
     { key: 'credentialRef', label: 'Credential Ref', placeholder: 'secret://smpp/production', secretRef: true },
-    { key: 'syncMode', label: '同步模式', placeholder: 'scheduled', type: 'select', options: ['manual', 'scheduled'] },
+    { key: 'environment', label: '环境', placeholder: 'home_lab' },
+    { key: 'syncMode', label: '同步模式', placeholder: 'manual', type: 'select', options: ['manual', 'poll', 'watch'] },
+    { key: 'snapshotTtlSeconds', label: '快照 TTL（秒）', placeholder: '3600', type: 'number' },
+    { key: 'lkgPolicy', label: 'LKG Policy', placeholder: 'allow_unexpired', type: 'select', options: ['allow_unexpired', 'deny_when_unavailable'] },
   ],
   skill: [
     { key: 'id', label: 'Package Reference', placeholder: 'skill-package-route-plan-2.5.0.tgz' },
@@ -44,12 +48,23 @@ const FIELDS: Partial<Record<RecordKind, FieldSpec[]>> = {
     { key: 'id', label: 'Capability ID', placeholder: 'cap-new-capability' }, { key: 'name', label: '名称', placeholder: 'New Capability' },
     { key: 'domain', label: '领域', placeholder: 'operations' }, { key: 'version', label: '版本', placeholder: '1', type: 'number' },
     { key: 'description', label: '能力描述', placeholder: '描述输入、输出、成功标准和边界', type: 'textarea' },
+    { key: 'inputSchema', label: 'Input Schema JSON', placeholder: '{"type":"object","properties":{}}', type: 'textarea' },
+    { key: 'outputSchema', label: 'Output Schema JSON', placeholder: '{"type":"object","properties":{}}', type: 'textarea' },
+    { key: 'successCriteria', label: 'Success Criteria JSON', placeholder: '[{"type":"result_present"}]', type: 'textarea' },
+    { key: 'requiredEvidence', label: 'Required Evidence JSON', placeholder: '[{"type":"provider_result"}]', type: 'textarea' },
+    { key: 'effects', label: 'Effects（逗号分隔）', placeholder: 'read_only' },
+    { key: 'supportedModes', label: 'Supported Modes（逗号分隔）', placeholder: 'guidance' },
     { key: 'riskLevel', label: '风险等级', placeholder: 'medium', type: 'select', options: ['low', 'medium', 'high', 'critical'] },
   ],
   a2aExposure: [
     { key: 'id', label: 'Exposure ID', placeholder: 'exposure-capability' }, { key: 'name', label: 'AgentSkill 名称', placeholder: 'Capability Exposure' },
+    { key: 'version', label: 'Exposure 版本', placeholder: '1', type: 'number' },
     { key: 'capabilityId', label: 'Capability ID', placeholder: 'cap-route-planning' }, { key: 'capabilityVersion', label: 'Capability 版本', placeholder: '1', type: 'number' },
     { key: 'agentSkillId', label: 'AgentSkill ID', placeholder: 'route_planning' }, { key: 'visibility', label: '可见性', placeholder: 'organization', type: 'select', options: ['organization', 'public'] },
+    { key: 'description', label: 'Exposure 描述', placeholder: '组织域公开能力描述', type: 'textarea' },
+    { key: 'requestSchema', label: 'Request Schema JSON', placeholder: '{"type":"object","properties":{}}', type: 'textarea' },
+    { key: 'resultSchema', label: 'Result Schema JSON', placeholder: '{"type":"object","properties":{}}', type: 'textarea' },
+    { key: 'readinessPublicationPolicy', label: 'Readiness 发布策略', placeholder: 'publish_when_available', type: 'select', options: ['publish_when_available', 'publish_degraded', 'always_publish_with_status'] },
   ],
 };
 
@@ -63,6 +78,7 @@ export function CreatePage({ kind }: { kind: RecordKind }) {
   const [submitting, setSubmitting] = useState(false);
   const [receipt, setReceipt] = useState<{ mode: string; operationId?: string }>();
   const [error, setError] = useState('');
+  const idempotencyKey = useMemo(() => `console-${operation.operationId}-${crypto.randomUUID?.() ?? Date.now()}`, [operation.operationId]);
   const allowed = canInvoke(operation);
   const invalidSecret = useMemo(() => fields.some((field) => field.secretRef && values[field.key] && !values[field.key].startsWith('secret://')), [fields, values]);
   const valid = fields.filter((field) => ['configurationId', 'providerId', 'routeId', 'smppSourceId', 'id', 'name'].includes(field.key)).some((field) => values[field.key].trim()) && reason.trim().length >= 5 && !invalidSecret;
@@ -73,7 +89,7 @@ export function CreatePage({ kind }: { kind: RecordKind }) {
     for (const field of fields.filter((item) => item.type === 'number')) payload[field.key] = Number(values[field.key]);
     if (typeof payload.fallbacks === 'string') payload.fallbacks = payload.fallbacks.split(',').map((item) => item.trim()).filter(Boolean);
     try {
-      const result = await execute({ operation, target: { type: kind, id: String(payload.id ?? payload.configurationId ?? payload.providerId ?? payload.routeId ?? payload.smppSourceId ?? 'new-draft') }, reason, idempotencyKey: `console-${operation.operationId}-${Date.now()}`, payload });
+      const result = await execute({ operation, target: { type: kind, id: String(payload.id ?? payload.configurationId ?? payload.providerId ?? payload.routeId ?? payload.smppSourceId ?? 'new-draft') }, reason, idempotencyKey, payload });
       setReceipt({ mode: result.mode, operationId: result.operation?.operationId });
     } catch (caught) { setError(caught instanceof Error ? caught.message : '提交失败'); }
     finally { setSubmitting(false); }

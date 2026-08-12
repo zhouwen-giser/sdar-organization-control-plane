@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "observedAt": "2026-08-12T00:58:00.884Z",
+  "transport": "text/event-stream",
+  "initialStatus": 200,
+  "cacheControl": "no-cache, no-store",
+  "bufferingDisabled": true,
+  "initialEventCount": 2,
+  "reconnectEventCount": 1,
+  "cursorSha256": "024da3fbe0273a30737d3fc39f224892bbeb4dfb8fe4e2ca2fb22d81cf7716b8",
+  "resumedEventSha256": "be4307e774f6c22338c9a84deaf83f9c46bb5c33e1668de443df110b6f88fa53",
+  "resumedEventType": "node.health.changed",
+  "aggregateType": "node_health_observation",
+  "aggregateRevision": 1,
+  "authoritativeRefetchPath": "/api/v1/node/health",
+  "authoritativeRefetchStatus": 200,
+  "eventPayloadUsedAsResourceState": false,
+  "browserReceivedUpstreamAuthority": false
+}

@@ -5,14 +5,18 @@ export const ROLE_SCOPES: Record<RoleId, readonly Scope[]> = {
   node_admin: [
     'a2a.manage', 'artifact.manage', 'audit.read', 'capability.manage', 'configuration.manage', 'events.read',
     'llm.manage', 'mcp.manage', 'node.read', 'node.write', 'operation.read', 'skill.manage', 'smpp.manage',
-    'task.control', 'task.read', 'telemetry_export.manage',
+    'task.control', 'task.read', 'evidence_export.manage', 'evidence_export.read', 'evidence_export.recover',
   ],
-  configuration_operator: ['configuration.manage', 'llm.manage', 'node.read', 'operation.read', 'telemetry_export.manage'],
+  configuration_operator: ['configuration.manage', 'llm.manage', 'node.read', 'operation.read', 'evidence_export.manage'],
   provider_operator: ['mcp.manage', 'node.read', 'operation.read', 'skill.manage', 'smpp.manage'],
   capability_operator: ['a2a.manage', 'artifact.read', 'capability.manage', 'node.read', 'operation.read', 'skill.read', 'task.read'],
   task_operator: ['node.read', 'operation.read', 'task.control', 'task.read'],
   auditor: ['audit.read', 'events.read', 'node.read', 'operation.read', 'task.read'],
   federation_reader: ['a2a.read', 'capability.read', 'events.read', 'node.read', 'operation.read', 'task.read'],
+  node_operator: ['audit.read', 'evidence_export.read'],
+  node_viewer: ['evidence_export.read'],
+  security_admin: ['audit.read', 'evidence_export.read', 'evidence_export.recover'],
+  organization_service: [],
 };
 
 export const ROLE_LABELS: Record<RoleId, string> = {
@@ -23,22 +27,29 @@ export const ROLE_LABELS: Record<RoleId, string> = {
   task_operator: '任务操作员',
   auditor: '审计员',
   federation_reader: '组织读取方',
+  node_operator: '节点运维员',
+  node_viewer: '节点只读方',
+  security_admin: '安全管理员',
+  organization_service: '组织服务',
 };
 
 const readScopeByTag: Record<string, Scope> = {
   Discovery: 'node.read', Node: 'node.read', Configuration: 'configuration.manage', LLM: 'llm.manage',
   SMPP: 'smpp.manage', MCP: 'mcp.manage', Skills: 'skill.read', PlanTemplates: 'artifact.read',
-  Capabilities: 'capability.read', A2A: 'a2a.read', Tasks: 'task.read', TelemetryExport: 'telemetry_export.manage',
+  Capabilities: 'capability.read', A2A: 'a2a.read', Tasks: 'task.read', EvidenceExport: 'evidence_export.read',
   Operations: 'operation.read', Audit: 'audit.read', Events: 'events.read',
 };
 
 const manageScopeByTag: Record<string, Scope> = {
   Node: 'node.write', Configuration: 'configuration.manage', LLM: 'llm.manage', SMPP: 'smpp.manage', MCP: 'mcp.manage',
   Skills: 'skill.manage', PlanTemplates: 'artifact.manage', Capabilities: 'capability.manage', A2A: 'a2a.manage',
-  Tasks: 'task.control', TelemetryExport: 'telemetry_export.manage', Operations: 'operation.read',
+  Tasks: 'task.control', EvidenceExport: 'evidence_export.manage', Operations: 'operation.read',
 };
 
 export function requiredScope(operation: ContractOperation): Scope {
+  if (['replayEvidence', 'retryEvidenceDeadLetter', 'reconcileEvidenceCoverage'].includes(operation.operationId)) {
+    return 'evidence_export.recover';
+  }
   return operation.kind === 'query'
     ? readScopeByTag[operation.tag] ?? 'node.read'
     : manageScopeByTag[operation.tag] ?? 'node.write';
@@ -67,8 +78,9 @@ export function operationLabel(operationId: string): string {
     createA2aExposureDraft: '创建 A2A 暴露', publishA2aExposureVersion: '发布 A2A 暴露', suspendA2aExposureVersion: '暂停 A2A 暴露',
     retireA2aExposureVersion: '退役 A2A 暴露', rebuildAgentCardRevision: '重建 Agent Card',
     pauseTask: '暂停任务', resumeTask: '恢复任务', cancelTask: '取消任务', submitTaskGoalPatch: '提交 Goal Patch',
-    createTelemetryExportRevision: '创建出口 Revision', validateTelemetryExportRevision: '校验出口配置', publishTelemetryExportRevision: '发布出口配置',
-    testTelemetryExportConnection: '测试出口连接', cancelManagementOperation: '取消 Management Operation',
+    createEvidenceExportRevision: '创建 Evidence 出口 Revision', validateEvidenceExportRevision: '校验 Evidence 出口配置', publishEvidenceExportRevision: '发布 Evidence 出口配置',
+    testEvidenceExportConnection: '测试 Evidence 出口连接', replayEvidence: '重放 Evidence', retryEvidenceDeadLetter: '重试 Dead Letter',
+    reconcileEvidenceCoverage: '重新对账 Evidence 覆盖率', cancelManagementOperation: '取消 Management Operation',
   };
   return labels[operationId] ?? operationId.replace(/([a-z])([A-Z])/g, '$1 $2');
 }

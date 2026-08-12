@@ -14,7 +14,8 @@ const ASYNC_OPERATION_IDS = new Set([
   'publishNodeCapabilityVersion', 'suspendNodeCapabilityVersion', 'deprecateNodeCapabilityVersion', 'retireNodeCapabilityVersion',
   'evaluateCapabilityReadiness', 'publishA2aExposureVersion', 'suspendA2aExposureVersion', 'retireA2aExposureVersion',
   'rebuildAgentCardRevision', 'pauseTask', 'resumeTask', 'cancelTask', 'submitTaskGoalPatch',
-  'publishTelemetryExportRevision', 'testTelemetryExportConnection', 'cancelManagementOperation',
+  'publishEvidenceExportRevision', 'testEvidenceExportConnection', 'replayEvidence',
+  'retryEvidenceDeadLetter', 'reconcileEvidenceCoverage', 'cancelManagementOperation',
 ]);
 
 function wait(ms: number) { return new Promise((resolve) => setTimeout(resolve, ms)); }
@@ -35,9 +36,9 @@ export class MockNodeControlGateway implements NodeControlGateway {
     this.snapshot = cloneSnapshot();
     if (scenario === 'degraded') {
       this.snapshot.node.health.status = 'degraded';
-      this.snapshot.telemetry.status.status = 'degraded';
-      this.snapshot.telemetry.status.pendingRecords = 1842;
-      this.snapshot.telemetry.status.lastErrorCode = 'TELEMETRY_INGESTION_TIMEOUT';
+      this.snapshot.evidence.status.status = 'degraded';
+      this.snapshot.evidence.status.pendingRecords = 1842;
+      this.snapshot.evidence.status.lastErrorCode = 'EVIDENCE_EXPORT_TIMEOUT';
     }
     if (scenario === 'empty') {
       for (const kind of Object.keys(this.snapshot.records) as RecordKind[]) this.snapshot.records[kind] = [];
@@ -46,6 +47,10 @@ export class MockNodeControlGateway implements NodeControlGateway {
   }
 
   reset() { this.setScenario('healthy'); }
+  async getEvidenceManifest(episodeId: string) {
+    await this.latency();
+    return { episodeId, status: 'complete', expectedFamilies: ['runtime', 'skill'], completedFamilies: ['runtime', 'skill'], missingFamilies: [] };
+  }
 
   operationById(operationId: string): ContractOperation | undefined {
     return CONTRACT_OPERATIONS.find((operation) => operation.operationId === operationId);
@@ -123,7 +128,7 @@ export class MockNodeControlGateway implements NodeControlGateway {
       if (found) return found;
     }
     if (this.snapshot.node.profile.id === id) return this.snapshot.node.profile;
-    if (this.snapshot.telemetry.configuration.id === id) return this.snapshot.telemetry.configuration;
+    if (this.snapshot.evidence.configuration.id === id) return this.snapshot.evidence.configuration;
     return undefined;
   }
 
@@ -201,6 +206,6 @@ function kindForOperation(operationId: string): RecordKind | undefined {
   if (operationId.includes('PlanTemplate')) return 'planTemplate';
   if (operationId.includes('Capability')) return 'capability';
   if (operationId.includes('A2aExposure')) return 'a2aExposure';
-  if (operationId.includes('TelemetryExport')) return undefined;
+  if (operationId.includes('EvidenceExport')) return undefined;
   return undefined;
 }

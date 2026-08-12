@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-11T23:11:32.691Z",
+  "selectionPolicy": "user_selected_previous_local_integration_branches",
+  "implementation": {
+    "repository": "zhouwen-giser/sdar-organization-control-plane",
+    "branch": "feature/single-node-console-live-integration",
+    "baselineSha": "52ee82f336ed221dcd85c4921c345898a5b8b29c",
+    "originMainReferenceSha": "52ee82f336ed221dcd85c4921c345898a5b8b29c",
+    "consoleVersion": "1.0.0"
+  },
+  "sdar": {
+    "repository": "zhouwen-giser/skill-driven-agent-runtime",
+    "branch": "codex/sdar-smpp-home-lab-integration",
+    "sha": "816f25f86910a94cba260e9f84e98de92074b75f",
+    "version": "1.4.1",
+    "originMainReferenceSha": "b8fc6c20b95114007eab86305aa4e34863f1334d",
+    "readOnlyWorktree": ".codex-console-live/sdar",
+    "artifacts": {
+      "manifest": "5aaaa7e6973cebd9914557fa4be40c27a16065bb88d88d99f222a256a7364a03",
+      "nodeControlOpenApi": "870a7451b84410fe6979ac2e773dd42ba63e545dfe45899afc493b56010a6fde",
+      "runtimeControlOpenApi": "d9f250a8f057eab5d9d5dc77088faf0fc525835804f8f3ad8fdb7fca18e66aba",
+      "operationInventory": "150e74baa085a965fd7130d334d858c6af14d816ff4c3ce6ba199b0f9ce81c3e",
+      "rbacMatrix": "74d3b5bad5eebf3cca7520af3daf24a7acad93b71c78f4790a4075d2930e538a",
+      "organizationProfile": "626bf3bc27c5f12b68a67243fefe506b08045ad7fa012c6deab8fc918bc373f3",
+      "evidenceExportContract": "01003d0875390833f44254de35c1bcee14ff921c49b6c388f71c1981bdb9b184",
+      "nodeEventsAsyncApi": "d117282d3fe65c20a7af5444b5c14edd78d77a04f3ec5cb3916dc5d676098f59",
+      "httpSmppRegistryClient": "4c6aa13fab99ca5d2895e877c9b045266167fdbe79017a0e20e04381a118e5bd"
+    }
+  },
+  "smpp": {
+    "repository": "zhouwen-giser/sdar-mcp-provider-platform",
+    "branch": "codex/ha-real-device-preparation",
+    "sha": "99302cf8d7871b677147c39530701790f8b7a051",
+    "version": "0.1.0",
+    "originMainReferenceSha": "34c16c5dd83b89f21013350f5c9a45ff04fa53e5",
+    "readOnlyWorktree": ".codex-console-live/smpp",
+    "artifacts": {
+      "registrySnapshotModel": "5933b0f544ba2846c6d5db7a95551d997ea7ebcc6ad5c795209fcd15ca2f64fc",
+      "providerPackageRegistryModel": "5ffc185da87f201ee8870cf97233132beda057492e6d61db4947912adae4d70a",
+      "adapterProto": "d36d49e8f6d85c5cb35e7c92fb6e66d8275c8d7cb4b97343c7f212d5c8ffc603",
+      "pmsApiDocumentation": "6ed40fdc27781b6854d7982060f66283a7374c977f6b3627455a77fedcd04ecd",
+      "sdarRegistryProjection": "91ebfd164ed560e3607b3b538996b4ca158571de90e2eb10f5ae4fa351f5479c",
+      "sdarRegistryProjectionRoutes": "86aa5ef4b1d2b29ec1135c16132fea67d2e7079e4b3d46625cda55448081634e"
+    }
+  },
+  "authorityNotes": [
+    "SDAR and SMPP are read-only SUT/source repositories for this goal.",
+    "The selected local integration branch heads override the task package default of latest origin/main.",
+    "origin/main SHAs are recorded for drift reference only and are not the active SUT baselines."
+  ]
+}

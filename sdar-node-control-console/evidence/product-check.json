@@ -1,9 +1,9 @@
 {
   "ok": true,
-  "checkedAt": "2026-07-31T07:28:06.920Z",
-  "sourceFilesChecked": 29,
+  "checkedAt": "2026-08-12T03:00:21.670Z",
+  "sourceFilesChecked": 40,
   "publicRouteCount": 53,
   "uniquePublicPathCount": 53,
-  "publicOperationCount": 85,
+  "publicOperationCount": 94,
   "violations": []
 }

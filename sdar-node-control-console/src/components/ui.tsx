@@ -84,7 +84,7 @@ export function Callout({ title, children, tone = 'info' }: { title: string; chi
 }
 
 export function OperationAction({ operationId, target, label, variant = 'secondary', onAccepted }: {
-  operationId: string; target: { type: string; id: string; revision?: number | string }; label?: string; variant?: 'primary' | 'secondary' | 'danger' | 'ghost'; onAccepted?(): void;
+  operationId: string; target: { type: string; id: string; revision?: number | string; etag?: string }; label?: string; variant?: 'primary' | 'secondary' | 'danger' | 'ghost'; onAccepted?(): void;
 }) {
   const operation = getOperation(operationId);
   const { canInvoke } = useConsole();
@@ -97,7 +97,7 @@ export function OperationAction({ operationId, target, label, variant = 'seconda
 }
 
 export function CommandDialog({ operation, target, onClose, onAccepted }: {
-  operation: ContractOperation; target: { type: string; id: string; revision?: number | string }; onClose(): void; onAccepted?(): void;
+  operation: ContractOperation; target: { type: string; id: string; revision?: number | string; etag?: string }; onClose(): void; onAccepted?(): void;
 }) {
   const { execute } = useConsole();
   const highRisk = isHighRisk(operation.operationId);
@@ -168,7 +168,10 @@ function renderColumn(record: ConsoleRecord, key: string): ReactNode {
 
 function renderValue(value: unknown): ReactNode {
   if (value == null || value === '') return <span className="muted">—</span>;
-  if (Array.isArray(value)) return <div className="tag-list">{value.map((item) => <span key={String(item)}>{String(item)}</span>)}</div>;
+  if (Array.isArray(value)) return <div className="tag-list">{value.map((item, index) => {
+    const rendered = typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item);
+    return <span key={`${index}:${rendered}`}>{rendered}</span>;
+  })}</div>;
   if (typeof value === 'object') return <code>{JSON.stringify(value)}</code>;
   if (typeof value === 'boolean') return value ? '是' : '否';
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) return formatTime(value);
@@ -184,5 +187,7 @@ function toneForStatus(status: string): Tone {
 }
 
 export function formatTime(value: string) {
-  return new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value));
+  const timestamp = new Date(value);
+  if (!value || Number.isNaN(timestamp.getTime())) return '—';
+  return new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(timestamp);
 }

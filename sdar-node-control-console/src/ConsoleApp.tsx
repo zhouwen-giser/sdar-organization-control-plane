@@ -8,7 +8,7 @@ import { OverviewPage } from './features/OverviewPage';
 import { NodeEditPage, NodeHealthPage, NodePage } from './features/NodePages';
 import {
   AccessPage, CapabilityImplementationsPage, ContractCoveragePage, EventsPage, SystemStatePage,
-  TaskBindingPage, TaskDetailPage, TelemetryPage,
+  EvidenceExportPage, TaskBindingPage, TaskDetailPage,
 } from './features/SpecialPages';
 
 export function ConsoleApp() {
@@ -37,8 +37,8 @@ function renderRoute(route: RouteMatch) {
     case 'implementations': return <CapabilityImplementationsPage id={route.params.id} version={route.params.version} />;
     case 'task-detail': return <TaskDetailPage id={route.params.id} />;
     case 'task-binding': return <TaskBindingPage id={route.params.id} />;
-    case 'telemetry': return <TelemetryPage />;
-    case 'telemetry-edit': return <TelemetryPage edit />;
+    case 'evidence-export': return <EvidenceExportPage />;
+    case 'evidence-export-edit': return <EvidenceExportPage edit />;
     case 'events': return <EventsPage />;
     case 'access': return <AccessPage />;
     case 'contract': return <ContractCoveragePage search={route.query.get('search') ?? ''} />;
@@ -52,6 +52,6 @@ function renderRoute(route: RouteMatch) {
 function lookupId(route: RouteMatch) {
   const id = route.params.id ?? '';
   const version = route.params.version;
-  if (version && ['skill', 'planTemplate', 'capability', 'readiness', 'a2aExposure'].includes(route.kind ?? '')) return `${id}@${version}`;
+  if (version && ['configuration', 'skill', 'planTemplate', 'capability', 'readiness', 'a2aExposure'].includes(route.kind ?? '')) return `${id}@${version}`;
   return id;
 }

@@ -1,11 +1,12 @@
 {
   "ok": true,
-  "checkedAt": "2026-07-31T07:28:07.198Z",
-  "productionFilesChecked": 24,
+  "checkedAt": "2026-08-12T03:00:20.892Z",
+  "productionFilesChecked": 29,
   "boundaries": {
     "contractPathsAreMetadata": true,
     "deterministicFixtureEndpointsAllowed": true,
-    "runtimeNetworkDependency": false,
+    "sameOriginBffNetwork": true,
+    "directUpstreamNetwork": false,
     "browserPersistence": false,
     "authenticationImplementation": false,
     "backendService": false,

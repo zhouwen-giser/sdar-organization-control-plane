@@ -1,55 +1,51 @@
-# SDAR v1.4 单节点控制台
+# SDAR v1.4 Single-Node Control Console
 
-基于 **SDAR v1.4 Node Control Backend 冻结协议 V1.0** 重建的 React + TypeScript 单节点控制台前端。
+React + TypeScript console integrated with the live SDAR Node Control API through a thin same-origin BFF.
 
-## 产品范围
+## Live scope
 
-控制台覆盖节点档案与健康、配置 Revision、LLM Provider、模型路由、SMPP Source、MCP Candidate/Binding、Skill、Plan Template、Node Capability、Readiness、A2A Exposure、Agent Card、Runtime Task、Telemetry Export、Management Operation、Audit、Node Events、RBAC 与协议追踪。
+- Node profile and health
+- Configuration revisions and convergence
+- LLM Provider and model routes
+- SMPP Source, MCP candidates and local Provider Bindings
+- Skill, Plan Template, Node Capability and Runtime Readiness
+- A2A Exposure, Agent Card and Runtime Task projections
+- Evidence v1.4.1 export configuration, delivery state and governed recovery
+- Management Operations, Audit and Node Events
 
-冻结后台当前状态为 `PROTOCOL_DESIGN_FROZEN_IMPLEMENTATION_PENDING`，因此本交付默认运行在可重复的 **Contract-first Local Validation Mode**：
+The browser never receives the Node Control bearer token or a browser-selected upstream URL. Runtime-internal APIs, databases, Evidence Analytics, ClickHouse and Evaluation queries are outside this console.
 
-- DTO、Operation、Scope 和路径来自冻结合同；
-- 数据通过领域 Gateway 访问；
-- 本地 Gateway 模拟 Revision、If-Match、Idempotency、202 Operation、Audit 和 Event；
-- 不直接访问 Runtime 内部接口；
-- 不提供 Telemetry Query；
-- 不实现真实登录、Token 或 Secret Value；
-- 刷新页面会恢复固定验证数据。
+## Run
 
-## 运行
-
-```bash
-npm ci
-npm run contract:check
-npm run validate
-npm run dev
+```powershell
+npm.cmd ci
+npm.cmd run build
+$env:CONSOLE_GATEWAY_MODE = 'live'
+$env:CONSOLE_BFF_HOST = '127.0.0.1'
+$env:CONSOLE_BFF_PORT = '4173'
+$env:SDAR_NODE_CONTROL_BASE_URL = 'http://127.0.0.1:20080'
+$env:SDAR_NODE_CONTROL_BEARER_TOKEN_FILE = '<server-only token file>'
+$env:SDAR_NODE_CONTROL_ROLE = 'node_admin'
+npm.cmd start
 ```
 
-默认开发地址：`http://localhost:4173/#/overview`
+Default development mode is still a deterministic local mock when `CONSOLE_GATEWAY_MODE` is absent. It is not accepted as live evidence.
 
-## 质量门禁
+## Quality gates
 
-```bash
-npm run contract:generate
-npm run contract:check
-npm run typecheck
-npm run check:architecture
-npm run check:product
-npm run lint
-npm run test
-npm run build
+```powershell
+npm.cmd run contract:check
+npm.cmd run validate
+npm.cmd run test:live-read
+npm.cmd run test:live-sse
+npm.cmd run test:live-evidence
+npm.cmd run test:live-supply
+npm.cmd run test:live-capability-a2a
+npm.cmd run test:live-recovery
 ```
 
-## 目录
+The platform currently exposes 94 frozen public operations, 29 schemas and 53 Console routes. See `reports/single-node-live-integration/` for phase evidence and the exact source locks.
 
-```text
-contracts/node-control/v1.0.0/  冻结协议副本
-src/api/generated/              合同生成类型与 Operation Inventory
-src/gateways/                   Gateway Contract 与确定性本地实现
-src/state/                      查询、命令、角色和场景状态
-src/mappers/                    DTO 到 ViewModel 映射
-src/features/                   独立领域页面
-src/components/                 Shell 和产品组件
-docs/design/                    基线、路由、能力和交互审计
-evidence/                       实际命令、浏览器 Smoke 和截图证据
-```
+## Current blocker
+
+The locked live SDAR Node Control API does not register the frozen Task pause/resume/cancel public routes. Exact Console BFF calls return HTTP 404 `RESOURCE_NOT_FOUND`. The Console mappings are present, but protected review must retain blocker `EXT-SDAR-NODE-CONTROL-TASK-CONTROL-001` until SDAR implements those routes.

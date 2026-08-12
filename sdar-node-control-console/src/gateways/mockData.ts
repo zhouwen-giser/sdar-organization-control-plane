@@ -271,26 +271,34 @@ export const healthySnapshot: GatewaySnapshot = {
         { name: 'Node Control Backend', status: 'healthy', detail: 'API ready', latencyMs: 18 },
         { name: 'SDAR Runtime', status: 'healthy', detail: 'Runtime Contract 1.0.0', latencyMs: 23 },
         { name: 'MCP Catalog', status: 'degraded', detail: '1 binding suspended', latencyMs: 41 },
-        { name: 'Telemetry Export', status: 'healthy', detail: 'WAL delivery current', latencyMs: 29 },
+        { name: 'Evidence Export', status: 'healthy', detail: 'Canonical Evidence delivery current', latencyMs: 29 },
       ],
     },
     declaration: {
       schemaVersion: '1.0.0', nodeId: 'node-tokyo-01', nodeType: 'sdar-runtime', displayName: 'SDAR Tokyo Node 01', environment: 'production',
       nodeControlApi: { baseUrl: 'https://127.0.0.1:10080/api/v1', version: '1.0.0' },
       nodeEvents: { endpoint: '/api/v1/events', transport: 'sse' }, a2aAgentCard: { endpoint: '/.well-known/agent-card.json', revision: 18 },
-      contractVersions: { nodeControl: '1.0.0', runtimeControl: '1.0.0', nodeEvents: '1.0.0', telemetryExport: '1.0.0' },
-      features: ['capability_governance', 'a2a_exposure', 'telemetry_export'],
+      contractVersions: { nodeControl: '1.0.0', runtimeControl: '1.0.0', nodeEvents: '1.0.0', evidenceExport: 'sdar.evidence/v1' },
+      features: ['capability_governance', 'a2a_exposure', 'evidence_export'],
     },
   },
-  telemetry: {
-    configuration: record('telemetry-export-primary', 'Telemetry Export Primary', 'active', '仅管理事实出口和本地 Delivery State，不提供遥测查询。', {
-      exportId: 'telemetry-export-primary', endpointRef: 'telemetry://sdar-platform/ingest', sourceId: 'sdar-node-tokyo-01', nodeId: 'node-tokyo-01',
-      credentialRef: 'secret://telemetry/export-primary', recordFamilies: ['task', 'workflow', 'capability', 'provider_ops'],
-      batchPolicy: '500 records / 2s', retryPolicy: 'exponential, max 30s', outboxPolicy: 'WAL fsync before ACK', tlsPolicyRef: 'tls://telemetry/production', applyMode: 'hot_reload',
+  evidence: {
+    configuration: record('evidence-export-primary', 'Evidence Export Primary', 'active', '管理 Canonical Evidence 出口与本地 Delivery State，不提供 Evidence 查询代理。', {
+      exportId: 'evidence-export-primary', endpointRef: 'evidence://organization-platform/ingest', sourceId: 'sdar-node-tokyo-01', nodeId: 'node-tokyo-01',
+      credentialRef: 'secret://evidence/export-primary', includedFamilies: ['runtime', 'skill', 'mcp_task', 'capability', 'evidence'],
+      excludedDiagnosticTypes: [], batchPolicy: { maxRecords: 500, maxBytes: 1048576, flushIntervalMs: 2000 },
+      retryPolicy: { baseDelayMs: 1000, maxDelayMs: 30000, maxAttempts: 10 }, outboxPolicy: { maxPendingRecords: 100000, retentionDays: 30 },
+      redactionProfile: 'organization-default', artifactMode: 'reference', applyMode: 'hot_reload',
     }, { revision: 5, tags: ['production', 'WAL'] }),
     status: {
-      status: 'healthy', activeRevision: 5, pendingRecords: 14, lastAcknowledgedSequence: 881240,
+      status: 'healthy', activeRevision: 5, pendingRecords: 14, deadLetterRecords: 0, openProjectionIssues: 0,
+      openQualityIssues: 0, highWatermarkActive: false, lastAcknowledgedSequence: '90071992547409931234',
       lastAcknowledgedAt: AGO.min4, oldestPendingAt: AGO.min4, observedAt: NOW,
+    },
+    operations: {
+      outbox: [], sourceCheckpoints: [], projectionIssues: [], qualityIssues: [], deadLetters: [],
+      hasMore: { outbox: false, sourceCheckpoints: false, projectionIssues: false, qualityIssues: false, deadLetters: false },
+      loaded: true,
     },
   },
   records: {
@@ -298,6 +306,7 @@ export const healthySnapshot: GatewaySnapshot = {
     capability, readiness, a2aExposure, agentCard, task, operation, audit, event,
   },
   nodeEvents,
+  eventStream: { status: 'connected', reconnectAttempts: 0, lastEventId: nodeEvents[0]?.eventId },
 };
 
 export function cloneSnapshot(): GatewaySnapshot {

@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "status": "completed",
+  "runId": "20260812-core-06",
+  "configurationId": "console-p04-20260812-core-06",
+  "create": {
+    "status": 201,
+    "etagPresent": true,
+    "replayStatus": 201,
+    "replayByteEquivalent": false,
+    "replayResourceEquivalent": true
+  },
+  "createConflictingReplay": {
+    "status": 500,
+    "code": "NODE_CONTROL_INTERNAL_ERROR",
+    "correlationIdPresent": true,
+    "retryable": true
+  },
+  "idempotencyConflict": {
+    "status": 409,
+    "code": "IDEMPOTENCY_KEY_REUSED",
+    "correlationIdPresent": true,
+    "retryable": false
+  },
+  "validationFailure": {
+    "status": 422,
+    "code": "CONFIGURATION_PLAINTEXT_SECRET_FORBIDDEN",
+    "correlationIdPresent": true,
+    "retryable": false
+  },
+  "staleEtag": {
+    "status": 412,
+    "code": "PRECONDITION_FAILED",
+    "correlationIdPresent": true,
+    "retryable": false
+  },
+  "validate": {
+    "status": 200,
+    "etagPresent": true,
+    "replayStatus": 200,
+    "replayByteEquivalent": true
+  },
+  "publish": {
+    "status": 202,
+    "initialOperationStatus": "running",
+    "replayStatus": 202,
+    "replayOperationIdStable": true
+  },
+  "publishOperation": {
+    "operationId": "fbd66e0d-2982-4772-a2d8-5b03dea9bfc8",
+    "status": "running",
+    "errorCode": null
+  },
+  "terminalOperation": {
+    "operationId": "readiness-d082f357ddc3d0cc6e5662fecfaf3f6d",
+    "status": "succeeded",
+    "errorCode": null
+  },
+  "audit": {
+    "status": 200,
+    "correlatedEntries": 3
+  },
+  "assertions": {
+    "createAndReplay": true,
+    "conflictingReplay": true,
+    "invalidPayload": true,
+    "stalePrecondition": true,
+    "validateAndReplay": true,
+    "acceptedNotApplied": true,
+    "publishReplay": true,
+    "terminalOperation": true,
+    "auditCorrelation": true
+  },
+  "ok": true
+}

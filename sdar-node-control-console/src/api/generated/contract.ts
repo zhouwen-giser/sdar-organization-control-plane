@@ -59,7 +59,7 @@ export interface CapabilityReadiness {
   "validUntil": string;
   "catalogHash"?: string;
   "policyHash"?: string;
-  "reasons": JsonObject[];
+  "reasons": ({ "code": string; "severity"?: "info" | "warning" | "blocking"; "detail"?: string; "dependencyRef"?: string })[];
   "availableImplementations"?: string[];
   "unavailableImplementations"?: string[];
 }
@@ -86,9 +86,9 @@ export interface ConfigurationRevision {
 }
 
 export interface DesiredObservedState {
-  "desired": JsonObject;
-  "observed": JsonObject;
-  "convergence": JsonObject;
+  "desired": { "revision"?: number; "status": string; "checksum"?: string };
+  "observed": { "revision"?: number; "status": string; "checksum"?: string; "runtimeVersion"?: string; "observedAt"?: string };
+  "convergence": { "status": "converged" | "pending" | "degraded" | "rejected" | "restart_required" | "unavailable"; "reasonCode"?: string; "detail"?: string };
 }
 
 export interface NodeEventEnvelope {
@@ -107,12 +107,56 @@ export interface NodeEventEnvelope {
   "payload": Record<string, unknown>;
 }
 
+export interface EvidenceExportConfiguration {
+  "exportId": string;
+  "endpointRef": string;
+  "sourceId": string;
+  "nodeId"?: string;
+  "credentialRef": string;
+  "includedFamilies": ("runtime" | "skill" | "mcp_task" | "capability" | "experience" | "replay" | "artifact" | "node_control" | "evidence")[];
+  "excludedDiagnosticTypes"?: string[];
+  "batchPolicy": { "maxRecords": number; "maxBytes": number; "flushIntervalMs": number };
+  "retryPolicy": { "baseDelayMs": number; "maxDelayMs": number; "maxAttempts"?: number };
+  "outboxPolicy": { "maxPendingRecords": number; "retentionDays": number };
+  "redactionProfile": string;
+  "artifactMode": "inline" | "reference";
+  "status": "draft" | "active" | "suspended" | "retired";
+  "revision": number;
+  "applyMode"?: "hot_reload" | "reconnect_required" | "restart_required";
+}
+
+export interface EvidenceExportStatus {
+  "exportId": string;
+  "status": "healthy" | "degraded" | "blocked" | "disabled" | "unavailable";
+  "activeRevision"?: number;
+  "lastAcknowledgedSequence"?: string;
+  "pendingRecords": number;
+  "oldestPendingAt"?: string;
+  "lastAcknowledgedAt"?: string;
+  "lastErrorCode"?: string;
+  "lastErrorAt"?: string;
+  "observedAt": string;
+}
+
+export interface EvidenceOperations {
+  "exportId"?: string;
+  "activeRevision"?: number;
+  "pendingRecords": number;
+  "deadLetterRecords": number;
+  "openProjectionIssues": number;
+  "openQualityIssues": number;
+  "globalAcknowledgedFrontier"?: string;
+  "highWatermarkActive": boolean;
+  "partitions": ({ "exportId": string; "sourcePartition": string; "status": "idle" | "exporting" | "degraded" | "high_watermark" | "disabled"; "lastSentSequence"?: string; "lastAcknowledgedSequence"?: string; "lastAcknowledgedAt"?: string; "leaseExpiresAt"?: string; "fencingToken": string; "lastErrorCode"?: string; "lastErrorAt"?: string; "observedAt": string })[];
+  "observedAt": string;
+}
+
 export interface LlmProvider {
   "providerId": string;
   "providerType": string;
   "baseUrl": string;
   "credentialRef": string;
-  "models"?: JsonObject[];
+  "models"?: { "modelId": string; "capabilities"?: string[]; "contextWindow"?: number; "enabled"?: boolean }[];
   "healthPolicy"?: Record<string, unknown>;
   "rateLimitPolicy"?: Record<string, unknown>;
   "status": "draft" | "active" | "degraded" | "suspended" | "retired";
@@ -151,14 +195,17 @@ export interface McpProviderBinding {
   "endpointRef"?: string;
   "status": "candidate" | "imported" | "active" | "degraded" | "suspended" | "removed";
   "availabilityStatus"?: "unknown" | "available" | "degraded" | "unavailable";
+  "availabilityValidUntil"?: string;
+  "catalogObservedAt"?: string;
+  "operationCount"?: number;
   "revision": number;
 }
 
 export interface ModelRoute {
   "routeId": string;
   "stage": "understanding" | "planning" | "execution" | "evaluation" | "summary" | "embedding";
-  "primary": JsonObject;
-  "fallbacks": JsonObject[];
+  "primary": { "providerId": string; "modelId": string };
+  "fallbacks": { "providerId": string; "modelId": string }[];
   "budgetPolicy"?: Record<string, unknown>;
   "status": "draft" | "active" | "suspended" | "retired";
   "revision": number;
@@ -189,7 +236,7 @@ export interface NodeCapabilityVersion {
 export interface NodeHealth {
   "nodeId": string;
   "status": "healthy" | "degraded" | "unavailable" | "maintenance";
-  "components": JsonObject[];
+  "components": ({ "component": string; "status": "healthy" | "degraded" | "unavailable" | "disabled"; "reasonCode"?: string; "observedAt"?: string })[];
   "activeTasks"?: number;
   "observedAt": string;
 }
@@ -200,7 +247,7 @@ export interface NodeProfile {
   "displayName": string;
   "description"?: string;
   "environment": string;
-  "labels"?: Record<string, unknown>;
+  "labels"?: Record<string, string>;
   "authorityScopes"?: string[];
   "runtimeEndpointRef"?: string;
   "telemetrySourceId"?: string;
@@ -236,7 +283,7 @@ export interface ProblemDetails {
   "instance"?: string;
   "correlationId": string;
   "retryable"?: boolean;
-  "violations"?: JsonObject[];
+  "violations"?: { "path": string; "code": string; "message": string }[];
 }
 
 export interface ResourceRef {
@@ -265,7 +312,7 @@ export interface RuntimeBootstrap {
   "activeConfigurationRefs": ResourceRef[];
   "activeCapabilityCatalogRef": ResourceRef;
   "activeExposureCatalogRef": ResourceRef;
-  "telemetryExportRef"?: ResourceRef;
+  "evidenceExportRef"?: ResourceRef;
   "serviceCredentialPolicy"?: Record<string, unknown>;
 }
 
@@ -299,6 +346,7 @@ export interface SmppSource {
   "status": "draft" | "active" | "suspended" | "retired";
   "activeSnapshotRevision"?: number;
   "activeSnapshotChecksum"?: string;
+  "activeSnapshotValidUntil"?: string;
   "lastSyncAt"?: string;
   "lastErrorCode"?: string;
   "revision": number;
@@ -331,40 +379,11 @@ export interface TaskSummary {
   "capabilityBindingId"?: string;
   "createdAt"?: string;
   "updatedAt": string;
-  "controlledActions"?: Record<string, unknown>;
-}
-
-export interface TelemetryExportConfiguration {
-  "exportId": string;
-  "endpointRef": string;
-  "sourceId": string;
-  "nodeId"?: string;
-  "credentialRef": string;
-  "recordFamilies": string[];
-  "batchPolicy"?: Record<string, unknown>;
-  "retryPolicy"?: Record<string, unknown>;
-  "outboxPolicy"?: Record<string, unknown>;
-  "tlsPolicyRef"?: string;
-  "status": "draft" | "active" | "suspended" | "retired";
-  "revision": number;
-  "applyMode"?: "hot_reload" | "reconnect_required" | "restart_required";
-}
-
-export interface TelemetryExportStatus {
-  "exportId": string;
-  "status": "healthy" | "degraded" | "blocked" | "disabled" | "unavailable";
-  "activeRevision"?: number;
-  "lastAcknowledgedSequence"?: number;
-  "pendingRecords": number;
-  "oldestPendingAt"?: string;
-  "lastAcknowledgedAt"?: string;
-  "lastErrorCode"?: string;
-  "lastErrorAt"?: string;
-  "observedAt": string;
+  "controlledActions"?: Record<string, boolean>;
 }
 
 export interface SdarNodeDeclaration {
-  "schemaVersion": unknown;
+  "schemaVersion": "1.0";
   "nodeId": string;
   "nodeType": string;
   "displayName"?: string;
@@ -372,14 +391,14 @@ export interface SdarNodeDeclaration {
   "nodeControlApi": string;
   "nodeEvents": string;
   "a2aAgentCard": string;
-  "contractVersions": JsonObject;
+  "contractVersions": { "nodeControlApi": string; "runtimeControl"?: string; "nodeEvents": string; "evidenceExport"?: string };
   "features"?: string[];
 }
 
 export type ContractOperation = { readonly operationId: string; readonly method: string; readonly path: string; readonly tag: string; readonly kind: 'query' | 'command' };
 export const CONTRACT_VERSION = '1.0.0' as const;
 export const CONTRACT_STATUS = 'PROTOCOL_DESIGN_FROZEN_IMPLEMENTATION_PENDING' as const;
-export const OPENAPI_SHA256 = 'd4693a3c38ac0449e63804804fcdcea93c8fbf154fa1e7959806afc1c7652394' as const;
+export const OPENAPI_SHA256 = '870a7451b84410fe6979ac2e773dd42ba63e545dfe45899afc493b56010a6fde' as const;
 export const CONTRACT_OPERATIONS = [
   {
     "operationId": "getSdarNodeDeclaration",
@@ -900,45 +919,45 @@ export const CONTRACT_OPERATIONS = [
     "kind": "command"
   },
   {
-    "operationId": "getTelemetryExportConfiguration",
+    "operationId": "getEvidenceExportConfiguration",
     "method": "GET",
-    "path": "/api/v1/telemetry-export",
-    "tag": "TelemetryExport",
+    "path": "/api/v1/evidence-export",
+    "tag": "EvidenceExport",
     "kind": "query"
   },
   {
-    "operationId": "createTelemetryExportRevision",
+    "operationId": "createEvidenceExportRevision",
     "method": "POST",
-    "path": "/api/v1/telemetry-export/revisions",
-    "tag": "TelemetryExport",
+    "path": "/api/v1/evidence-export/revisions",
+    "tag": "EvidenceExport",
     "kind": "command"
   },
   {
-    "operationId": "validateTelemetryExportRevision",
+    "operationId": "validateEvidenceExportRevision",
     "method": "POST",
-    "path": "/api/v1/telemetry-export/revisions/{revision}/validate",
-    "tag": "TelemetryExport",
+    "path": "/api/v1/evidence-export/revisions/{revision}/validate",
+    "tag": "EvidenceExport",
     "kind": "command"
   },
   {
-    "operationId": "publishTelemetryExportRevision",
+    "operationId": "publishEvidenceExportRevision",
     "method": "POST",
-    "path": "/api/v1/telemetry-export/revisions/{revision}/publish",
-    "tag": "TelemetryExport",
+    "path": "/api/v1/evidence-export/revisions/{revision}/publish",
+    "tag": "EvidenceExport",
     "kind": "command"
   },
   {
-    "operationId": "getTelemetryExportStatus",
+    "operationId": "getEvidenceExportStatus",
     "method": "GET",
-    "path": "/api/v1/telemetry-export/status",
-    "tag": "TelemetryExport",
+    "path": "/api/v1/evidence-export/status",
+    "tag": "EvidenceExport",
     "kind": "query"
   },
   {
-    "operationId": "testTelemetryExportConnection",
+    "operationId": "testEvidenceExportConnection",
     "method": "POST",
-    "path": "/api/v1/telemetry-export/test",
-    "tag": "TelemetryExport",
+    "path": "/api/v1/evidence-export/test",
+    "tag": "EvidenceExport",
     "kind": "command"
   },
   {
@@ -975,5 +994,68 @@ export const CONTRACT_OPERATIONS = [
     "path": "/api/v1/events",
     "tag": "Events",
     "kind": "query"
+  },
+  {
+    "operationId": "listEvidenceOutbox",
+    "method": "GET",
+    "path": "/api/v1/evidence-export/outbox",
+    "tag": "EvidenceExport",
+    "kind": "query"
+  },
+  {
+    "operationId": "listEvidenceSourceCheckpoints",
+    "method": "GET",
+    "path": "/api/v1/evidence-export/source-checkpoints",
+    "tag": "EvidenceExport",
+    "kind": "query"
+  },
+  {
+    "operationId": "listEvidenceProjectionIssues",
+    "method": "GET",
+    "path": "/api/v1/evidence-export/projection-issues",
+    "tag": "EvidenceExport",
+    "kind": "query"
+  },
+  {
+    "operationId": "listEvidenceQualityIssues",
+    "method": "GET",
+    "path": "/api/v1/evidence-export/quality-issues",
+    "tag": "EvidenceExport",
+    "kind": "query"
+  },
+  {
+    "operationId": "getEpisodeEvidenceManifest",
+    "method": "GET",
+    "path": "/api/v1/evidence-export/episode-manifests/{episodeId}",
+    "tag": "EvidenceExport",
+    "kind": "query"
+  },
+  {
+    "operationId": "listEvidenceDeadLetters",
+    "method": "GET",
+    "path": "/api/v1/evidence-export/dead-letters",
+    "tag": "EvidenceExport",
+    "kind": "query"
+  },
+  {
+    "operationId": "replayEvidence",
+    "method": "POST",
+    "path": "/api/v1/evidence-export/replays",
+    "tag": "EvidenceExport",
+    "kind": "command"
+  },
+  {
+    "operationId": "retryEvidenceDeadLetter",
+    "method": "POST",
+    "path": "/api/v1/evidence-export/dead-letters/{deadLetterId}/retry",
+    "tag": "EvidenceExport",
+    "kind": "command"
+  },
+  {
+    "operationId": "reconcileEvidenceCoverage",
+    "method": "POST",
+    "path": "/api/v1/evidence-export/reconcile",
+    "tag": "EvidenceExport",
+    "kind": "command"
   }
 ] as const satisfies readonly ContractOperation[];

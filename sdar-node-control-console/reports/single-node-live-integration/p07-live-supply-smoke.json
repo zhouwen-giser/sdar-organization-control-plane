@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "observedAt": "2026-08-12T01:38:46.488Z",
+  "consoleProvider": {
+    "id": "console-p07-provider-20260812-p07-01",
+    "status": "draft",
+    "validationStatus": "succeeded"
+  },
+  "consoleRoute": {
+    "id": "console-p07-route-20260812-p07-01",
+    "stage": "planning",
+    "status": "draft"
+  },
+  "deterministicLlmFixture": {
+    "loopback": true,
+    "modelId": "structured-fixture",
+    "credentialExposed": false
+  },
+  "smppSource": {
+    "id": "home-lab-smpp",
+    "statusBefore": "active",
+    "syncOperationStatus": "succeeded",
+    "activeSnapshotRevisionBefore": 2
+  },
+  "realCandidateCount": 2,
+  "realBindingCount": 2,
+  "observedBindings": [
+    {
+      "id": "mcp-binding-ha-climate-lab",
+      "status": "active",
+      "availabilityStatus": "available",
+      "registryRevision": 2,
+      "catalogRevision": "2.0.0-rc.1:35"
+    },
+    {
+      "id": "mcp-binding-ha-light-lab",
+      "status": "active",
+      "availabilityStatus": "available",
+      "registryRevision": 2,
+      "catalogRevision": "2.0.0-rc.1:30"
+    }
+  ],
+  "operationHashes": {
+    "sync": "cd07a70ace7320713708d6cc2182b035c5e460ffb3c230703e1dc502c0876d79"
+  },
+  "sdarSourceModified": false,
+  "smppSourceModified": false,
+  "physicalDeviceWrites": 0,
+  "browserReceivedUpstreamAuthority": false
+}

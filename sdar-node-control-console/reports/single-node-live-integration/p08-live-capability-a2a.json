@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "status": "external_blocker_recorded",
+  "observedAt": "2026-08-12T02:01:23.400Z",
+  "coreVertical": {
+    "passed": true,
+    "exposureId": "home-lab-a2a-living-room-read-state",
+    "exposureVersion": 1,
+    "capabilityId": "home.living-room.read-state",
+    "capabilityVersion": 1,
+    "taskIdSha256": "49a888b9b1964bcb24fa0530092fd44f43d61f9d181f7497bacb42a8e09b9b7d",
+    "taskPhase": "completed",
+    "bindingIdSha256": "43b6b4e2b5b6245d5136f093c3911c64d55e048c774cfedfee1718cf568fec60",
+    "bindingHash": "ac895110e6b8eb622a3e84ae224728d525b90fbe16c884be948bfe62066f8e50",
+    "activeAgentCardRevision": 10,
+    "modelBoundary": "simulated_local_structured_fixture",
+    "mcpReadOperationCount": 2
+  },
+  "requesterRejection": {
+    "taskIdSha256": "f582470ecb79b65bf9ba3e8e04578a43d20907d9e2dce7b13b10f068beaef82a",
+    "a2aState": "TASK_STATE_FAILED",
+    "nodeControlProjectionExpected": false
+  },
+  "taskControlExternalBlocker": {
+    "code": "EXT-SDAR-NODE-CONTROL-TASK-CONTROL-001",
+    "expectedOperations": [
+      "pauseTask",
+      "resumeTask",
+      "cancelTask"
+    ],
+    "observations": [
+      {
+        "action": "pause",
+        "httpStatus": 404,
+        "code": "RESOURCE_NOT_FOUND",
+        "requestSha256": "ff4c818d4045142f4e3b0c3b493636052638e0d8657bc9a278986ae66d852aa3",
+        "responseSha256": "66b083213f40af31e3129e8532b95591e25ba48535daf372b81c56a6c51826e9"
+      },
+      {
+        "action": "resume",
+        "httpStatus": 404,
+        "code": "RESOURCE_NOT_FOUND",
+        "requestSha256": "c0aad8661564dec4bead2f38ecb28d24a01c3e5db3be2da2e28278a691130eb6",
+        "responseSha256": "fe4cac8c1c91a022f92c884dea15b6ab6561d154e455079f73952594f7e3f249"
+      },
+      {
+        "action": "cancel",
+        "httpStatus": 404,
+        "code": "RESOURCE_NOT_FOUND",
+        "requestSha256": "3183f50fd39efb4a8ff0804ad4250d92afc824cbf811590449f8bb9c41ca85f7",
+        "responseSha256": "321b3a4487a4b3be6ad86d14caf46a21b87fdd1c5235ca8b8907121e1b3fa2cd"
+      }
+    ],
+    "owner": "skill-driven-agent-runtime"
+  },
+  "safety": {
+    "physicalDeviceWrites": 0,
+    "browserReceivedUpstreamAuthority": false
+  },
+  "sourceLocks": {
+    "sdar": "816f25f86910a94cba260e9f84e98de92074b75f",
+    "smpp": "99302cf8d7871b677147c39530701790f8b7a051"
+  }
+}

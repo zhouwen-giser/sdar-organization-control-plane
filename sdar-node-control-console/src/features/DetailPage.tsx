@@ -12,6 +12,8 @@ export function DetailPage({ kind, id }: { kind: RecordKind; id: string }) {
   const [tab, setTab] = useState('overview');
   const record = query.data;
   const targetType = kind === 'task' ? 'task' : kind;
+  const metadata = record?.fields.__metadata && typeof record.fields.__metadata === 'object' ? record.fields.__metadata as Record<string, unknown> : undefined;
+  const etag = typeof metadata?.etag === 'string' ? metadata.etag : undefined;
   const actionIds = useMemo(() => actionsForRecord(kind, record?.status, config.actions), [kind, record?.status, config.actions]);
 
   if (query.loading) return <Panel><SkeletonRows count={7} /></Panel>;
@@ -19,7 +21,7 @@ export function DetailPage({ kind, id }: { kind: RecordKind; id: string }) {
   if (!record) return <EmptyState title={`${config.singular} 不存在`} detail={`未找到 ID 为 ${id} 的资源。它可能已被移除，或当前列表 Cache 不包含该对象。`} action={<Button onClick={() => navigate(config.listPath)}><ArrowLeft size={15} />返回列表</Button>} />;
 
   return <div className="page-stack">
-    <section className="detail-hero"><div className="detail-title"><Button variant="ghost" onClick={() => navigate(config.listPath)}><ArrowLeft size={15} />返回</Button><span className="eyebrow">{config.singular} · {record.id}</span><div><h2>{record.name}</h2><Badge value={record.status} /></div><p>{record.summary}</p><div className="hero-meta"><span>Revision <strong>{record.revision ?? 'N/A'}</strong></span><span>更新时间 <strong>{formatTime(record.updatedAt)}</strong></span>{record.tags?.map((tag) => <span className="soft-tag" key={tag}>{tag}</span>)}</div></div><div className="hero-actions"><Button variant="ghost" loading={query.refreshing} onClick={query.refresh}><RefreshCcw size={15} />刷新</Button>{actionIds.slice(0, 4).map((operationId, index) => <OperationAction key={operationId} operationId={operationId} target={{ type: targetType, id: record.id, revision: typeof record.revision === 'number' ? record.revision : undefined }} variant={index === 0 ? 'primary' : operationId.match(/remove|retire|cancel/i) ? 'danger' : 'secondary'} />)}</div></section>
+    <section className="detail-hero"><div className="detail-title"><Button variant="ghost" onClick={() => navigate(config.listPath)}><ArrowLeft size={15} />返回</Button><span className="eyebrow">{config.singular} · {record.id}</span><div><h2>{record.name}</h2><Badge value={record.status} /></div><p>{record.summary}</p><div className="hero-meta"><span>Revision <strong>{record.revision ?? 'N/A'}</strong></span><span>更新时间 <strong>{formatTime(record.updatedAt)}</strong></span>{record.tags?.map((tag) => <span className="soft-tag" key={tag}>{tag}</span>)}</div></div><div className="hero-actions"><Button variant="ghost" loading={query.refreshing} onClick={query.refresh}><RefreshCcw size={15} />刷新</Button>{actionIds.slice(0, 4).map((operationId, index) => <OperationAction key={operationId} operationId={operationId} target={{ type: targetType, id: record.id, revision: typeof record.revision === 'number' ? record.revision : undefined, ...(etag ? { etag } : {}) }} variant={index === 0 ? 'primary' : operationId.match(/remove|retire|cancel/i) ? 'danger' : 'secondary'} />)}</div></section>
     <Callout title="产品边界">{config.boundary}</Callout>
     {config.highRiskNote && <Callout title="变更影响" tone="warning">{config.highRiskNote}</Callout>}
     <Tabs tabs={[{ id: 'overview', label: '概览' }, { id: 'relations', label: '关系与依赖' }, { id: 'contract', label: '合同 DTO' }, { id: 'activity', label: '变更语义' }]} active={tab} onChange={setTab} />

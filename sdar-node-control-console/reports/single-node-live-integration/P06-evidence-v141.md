@@ -43,6 +43,11 @@ Machine evidence: `p06-live-evidence-smoke.json`.
 
 `733ac703ae943a3a4781541605f0b9c5fc0022cb`
 
+## Evidence Commit and Remote Verification
+
+- Evidence commit: `78bac7ac9680a74a3eab1ce53050c8fe6cdd4d96`
+- Remote branch matched the evidence commit before phase closure.
+
 ## Status
 
 `EVIDENCE_V141_UI_PASSED`

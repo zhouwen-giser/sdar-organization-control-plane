@@ -1,9 +1,11 @@
 import { Activity, AlertTriangle, Boxes, CheckCircle2, FileClock, GitBranch, HeartPulse, Network, Radio, Sparkles } from '../components/icons';
 import { navigate } from '../routes';
-import { useGatewaySnapshot } from '../state/ConsoleState';
+import { refreshGatewayOverview, useGatewaySnapshot } from '../state/ConsoleState';
+import { useEffect } from 'react';
 import { Badge, Button, Callout, MetricCard, Panel, formatTime } from '../components/ui';
 
 export function OverviewPage() {
+  useEffect(() => { void refreshGatewayOverview(); }, []);
   const snapshot = useGatewaySnapshot();
   const records = snapshot.records;
   const activeTasks = records.task.filter((item) => ['running', 'paused'].includes(item.status));

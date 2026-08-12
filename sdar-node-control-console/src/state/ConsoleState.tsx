@@ -80,6 +80,7 @@ export function useGatewaySnapshot() {
 
 export function useCollection(kind: RecordKind, search = '', status = 'all'): QueryState<ConsoleRecord[]> & { refresh(): void } {
   const snapshot = useGatewaySnapshot();
+  const mockRevision = getConsoleRuntimeConfig().gatewayMode === 'mock' ? snapshot.revision : 0;
   const [nonce, setNonce] = useState(0);
   const [state, setState] = useState<QueryState<ConsoleRecord[]>>({ loading: true, refreshing: false });
 
@@ -91,13 +92,14 @@ export function useCollection(kind: RecordKind, search = '', status = 'all'): Qu
       (error: ConsoleErrorShape) => active && setState((previous) => ({ ...previous, loading: false, refreshing: false, error })),
     );
     return () => { active = false; };
-  }, [kind, search, status, nonce, snapshot.revision]);
+  }, [kind, search, status, nonce, mockRevision]);
 
   return { ...state, refresh: () => setNonce((value) => value + 1) };
 }
 
 export function useRecord(kind: RecordKind, id: string): QueryState<ConsoleRecord | undefined> & { refresh(): void } {
   const snapshot = useGatewaySnapshot();
+  const mockRevision = getConsoleRuntimeConfig().gatewayMode === 'mock' ? snapshot.revision : 0;
   const [nonce, setNonce] = useState(0);
   const [state, setState] = useState<QueryState<ConsoleRecord | undefined>>({ loading: true, refreshing: false });
   useEffect(() => {
@@ -108,8 +110,12 @@ export function useRecord(kind: RecordKind, id: string): QueryState<ConsoleRecor
       (error: ConsoleErrorShape) => active && setState((previous) => ({ ...previous, loading: false, refreshing: false, error })),
     );
     return () => { active = false; };
-  }, [kind, id, nonce, snapshot.revision]);
+  }, [kind, id, nonce, mockRevision]);
   return { ...state, refresh: () => setNonce((value) => value + 1) };
+}
+
+export function refreshGatewayOverview() {
+  return nodeControlGateway.refreshOverview?.() ?? Promise.resolve();
 }
 
 export function getOperation(operationId: string) {

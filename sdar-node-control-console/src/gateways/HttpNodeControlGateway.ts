@@ -10,6 +10,7 @@ import type {
 } from '../domain';
 import { ConsoleError } from '../domain';
 import type { NodeControlGateway } from './contracts';
+import { LIVE_RESOURCES, mapLiveResource, pageItems } from './liveResourceMap';
 
 export interface NodeControlResponse<T> {
   status: number;
@@ -27,6 +28,7 @@ export interface NodeControlRequest {
   query?: Record<string, string | number | boolean | undefined>;
   body?: unknown;
   etag?: string;
+  ifNoneMatch?: string;
   idempotencyKey?: string;
   lastEventId?: string;
   requestId?: string;
@@ -91,23 +93,38 @@ function toConsoleError(response: Response, body: unknown): ConsoleError {
 }
 
 export class NodeControlHttpClient {
-  constructor(private readonly fetchImpl: typeof fetch = fetch) {}
+  constructor(private readonly fetchImpl: typeof fetch = (input, init) => globalThis.fetch(input, init)) {}
 
   async request<T>(input: NodeControlRequest): Promise<NodeControlResponse<T>> {
     const headers = new Headers({ accept: 'application/json' });
     if (input.body !== undefined) headers.set('content-type', 'application/json');
     if (input.etag) headers.set('if-match', input.etag);
+    if (input.ifNoneMatch) headers.set('if-none-match', input.ifNoneMatch);
     if (input.idempotencyKey) headers.set('idempotency-key', input.idempotencyKey);
     if (input.lastEventId) headers.set('last-event-id', input.lastEventId);
     if (input.requestId) headers.set('x-request-id', input.requestId);
     if (input.correlationId) headers.set('x-correlation-id', input.correlationId);
-    const response = await this.fetchImpl(requestPath(input.path, input.query), {
-      method: input.method,
-      headers,
-      body: input.body === undefined ? undefined : JSON.stringify(input.body),
-      redirect: 'manual',
-      credentials: 'same-origin',
-    });
+    let response: Response;
+    try {
+      response = await this.fetchImpl(requestPath(input.path, input.query), {
+        method: input.method,
+        headers,
+        body: input.body === undefined ? undefined : JSON.stringify(input.body),
+        redirect: 'manual',
+        credentials: 'same-origin',
+      });
+    } catch (error) {
+      if (error instanceof ConsoleError) throw error;
+      throw new ConsoleError({
+        status: 503,
+        code: 'CONSOLE_BFF_UNAVAILABLE',
+        title: 'Console BFF unavailable',
+        detail: error instanceof Error ? error.message : 'The same-origin Console BFF could not be reached.',
+        correlationId: 'console-local',
+        retryable: true,
+      });
+    }
+    if (response.status === 304) return responseMetadata(response, undefined as T);
     const body = await responseBody(response);
     if (!response.ok) throw toConsoleError(response, body);
     return responseMetadata(response, body as T);
@@ -148,18 +165,162 @@ function mappingPending() {
 }
 
 export class HttpNodeControlGateway implements NodeControlGateway {
-  private readonly snapshot = emptyLiveSnapshot();
+  private snapshot = emptyLiveSnapshot();
+  private readonly listeners = new Set<() => void>();
 
-  constructor(readonly client = new NodeControlHttpClient()) {}
+  constructor(readonly client = new NodeControlHttpClient(), options: { autoRefresh?: boolean } = {}) {
+    if (options.autoRefresh !== false) void this.refreshSnapshot().catch(() => undefined);
+  }
 
   getSnapshot() { return this.snapshot; }
-  subscribe() { return () => undefined; }
+  subscribe(listener: () => void) { this.listeners.add(listener); return () => this.listeners.delete(listener); }
   setScenario(_scenario: ScenarioId) {}
-  reset() {}
+  reset() { void this.refreshSnapshot().catch(() => undefined); }
+  async refreshOverview() {
+    const kinds: RecordKind[] = ['configuration', 'mcpBinding', 'capability', 'readiness', 'task', 'operation', 'audit'];
+    for (const kind of kinds) {
+      try { await this.list(kind); } catch { /* Individual page hooks surface their authoritative errors. */ }
+    }
+  }
   operationById(operationId: string): ContractOperation | undefined {
     return CONTRACT_OPERATIONS.find((operation) => operation.operationId === operationId);
   }
-  list(_kind: RecordKind, _options?: QueryOptions): Promise<ConsoleRecord[]> { return Promise.reject(mappingPending()); }
-  get(_kind: RecordKind, _id: string): Promise<ConsoleRecord | undefined> { return Promise.reject(mappingPending()); }
+  async list(kind: RecordKind, options: QueryOptions = {}): Promise<ConsoleRecord[]> {
+    if (kind === 'event') return this.snapshot.records.event;
+    const definition = LIVE_RESOURCES[kind];
+    const records: ConsoleRecord[] = [];
+    let pageToken: string | undefined;
+    let pages = 0;
+    do {
+      const response = await this.client.request<unknown>({ method: 'GET', path: definition.listPath, query: pageToken ? { pageToken } : undefined });
+      const page = pageItems(response.data);
+      records.push(...page.items.map((item) => mapLiveResource(kind, item, response, page.asOf)));
+      pageToken = page.nextPageToken;
+      pages += 1;
+      if (pages > 100) throw new ConsoleError({ status: 502, code: 'CONSOLE_PAGINATION_LIMIT_EXCEEDED', title: 'Pagination limit exceeded', detail: 'Node Control returned more than 100 pages for one Console query.', correlationId: response.correlationId ?? 'unknown', retryable: false });
+    } while (pageToken);
+    const filtered = records.filter((record) => {
+      const searchMatches = !options.search || `${record.id} ${record.name} ${record.summary} ${(record.tags ?? []).join(' ')}`.toLowerCase().includes(options.search.toLowerCase());
+      const statusMatches = !options.status || options.status === 'all' || record.status === options.status;
+      return searchMatches && statusMatches;
+    });
+    this.replaceRecords(kind, records);
+    return filtered;
+  }
+  async get(kind: RecordKind, id: string): Promise<ConsoleRecord | undefined> {
+    const definition = LIVE_RESOURCES[kind];
+    if (!definition.detailPath) return (await this.list(kind)).find((record) => record.id === id);
+    try {
+      const response = await this.client.request<unknown>({ method: 'GET', path: definition.detailPath(id) });
+      let source = response.data;
+      if (source && typeof source === 'object' && !Array.isArray(source) && kind === 'task') {
+        try {
+          const binding = await this.client.request<unknown>({ method: 'GET', path: `/api/v1/tasks/${encodeURIComponent(id)}/capability-binding` });
+          source = { ...source as Record<string, unknown>, capabilityBinding: binding.data };
+        } catch (error) {
+          if (!(error instanceof ConsoleError && error.status === 404)) throw error;
+        }
+      }
+      if (source && typeof source === 'object' && !Array.isArray(source) && kind === 'capability') {
+        const [capabilityId, version] = id.split('@');
+        const implementations = await this.client.request<unknown>({ method: 'GET', path: `/api/v1/node-capabilities/${encodeURIComponent(capabilityId)}/versions/${encodeURIComponent(version)}/implementations` });
+        source = { ...source as Record<string, unknown>, implementationBindings: pageItems(implementations.data).items };
+      }
+      const record = mapLiveResource(kind, source, response);
+      this.upsertRecord(kind, record);
+      return record;
+    } catch (error) {
+      if (error instanceof ConsoleError && error.status === 404) return undefined;
+      throw error;
+    }
+  }
   execute(_input: CommandInput): Promise<CommandReceipt> { return Promise.reject(mappingPending()); }
+
+  private emit() { this.listeners.forEach((listener) => listener()); }
+
+  private replaceRecords(kind: RecordKind, records: ConsoleRecord[]) {
+    if (JSON.stringify(this.snapshot.records[kind]) === JSON.stringify(records)) return;
+    this.snapshot = { ...this.snapshot, revision: this.snapshot.revision + 1, records: { ...this.snapshot.records, [kind]: records } };
+    this.emit();
+  }
+
+  private upsertRecord(kind: RecordKind, record: ConsoleRecord) {
+    const records = this.snapshot.records[kind].filter((item) => item.id !== record.id);
+    this.replaceRecords(kind, [record, ...records]);
+  }
+
+  private async refreshSnapshot() {
+    const profileRequest = this.client.request<Record<string, unknown>>({ method: 'GET', path: '/api/v1/node' });
+    const healthRequest = this.client.request<Record<string, unknown>>({ method: 'GET', path: '/api/v1/node/health' });
+    const declarationRequest = this.client.request<Record<string, unknown>>({ method: 'GET', path: '/.well-known/sdar-node' });
+    const evidenceConfigurationRequest = this.client.request<Record<string, unknown>>({ method: 'GET', path: '/api/v1/evidence-export' });
+    const evidenceStatusRequest = this.client.request<Record<string, unknown>>({ method: 'GET', path: '/api/v1/evidence-export/status' });
+    const [profileResult, healthResult, declarationResult, evidenceConfigurationResult, evidenceStatusResult] = await Promise.allSettled([
+      profileRequest, healthRequest, declarationRequest, evidenceConfigurationRequest, evidenceStatusRequest,
+    ]);
+    if (profileResult.status === 'rejected') throw profileResult.reason;
+    if (healthResult.status === 'rejected') throw healthResult.reason;
+    if (declarationResult.status === 'rejected') throw declarationResult.reason;
+    const profile = profileResult.value;
+    const health = healthResult.value;
+    const declaration = declarationResult.value;
+    const evidenceConfiguration = evidenceConfigurationResult.status === 'fulfilled' ? evidenceConfigurationResult.value : undefined;
+    const evidenceStatus = evidenceStatusResult.status === 'fulfilled' ? evidenceStatusResult.value : undefined;
+    const profileFields = profile.data;
+    const healthFields = health.data;
+    const evidenceFields = evidenceConfiguration?.data ?? {};
+    const statusFields = evidenceStatus?.data ?? {};
+    const observedAt = typeof healthFields.observedAt === 'string' ? healthFields.observedAt : '';
+    this.snapshot = {
+      ...this.snapshot,
+      revision: this.snapshot.revision + 1,
+      node: {
+        profile: {
+          id: typeof profileFields.nodeId === 'string' ? profileFields.nodeId : 'unknown-node',
+          name: typeof profileFields.displayName === 'string' ? profileFields.displayName : typeof profileFields.nodeId === 'string' ? profileFields.nodeId : 'Unknown Node',
+          status: typeof profileFields.status === 'string' ? profileFields.status : 'unknown',
+          summary: typeof profileFields.description === 'string' ? profileFields.description : '',
+          ...(typeof profileFields.revision === 'number' ? { revision: profileFields.revision } : {}),
+          updatedAt: typeof profileFields.updatedAt === 'string' ? profileFields.updatedAt : '',
+          fields: { ...profileFields, __metadata: { ...(profile.etag ? { etag: profile.etag } : {}), sourceRevision: profileFields.revision, observedAt: profileFields.updatedAt } },
+        },
+        health: {
+          status: healthFields.status === 'healthy' || healthFields.status === 'degraded' || healthFields.status === 'unavailable' ? healthFields.status : 'unavailable',
+          observedAt,
+          activeTasks: typeof healthFields.activeTasks === 'number' ? healthFields.activeTasks : 0,
+          components: Array.isArray(healthFields.components) ? healthFields.components.map((component) => {
+            const item = component as Record<string, unknown>;
+            return { name: String(item.component ?? ''), status: String(item.status ?? 'unknown'), detail: String(item.reasonCode ?? ''), ...(typeof item.latencyMs === 'number' ? { latencyMs: item.latencyMs } : {}) };
+          }) : [],
+        },
+        declaration: declaration.data,
+      },
+      evidence: {
+        configuration: {
+          id: typeof evidenceFields.exportId === 'string' ? evidenceFields.exportId : 'evidence-export',
+          name: typeof evidenceFields.exportId === 'string' ? evidenceFields.exportId : 'Evidence Export',
+          status: typeof evidenceFields.status === 'string' ? evidenceFields.status : typeof statusFields.status === 'string' ? statusFields.status : 'unavailable',
+          summary: '',
+          ...(typeof evidenceFields.revision === 'number' ? { revision: evidenceFields.revision } : {}),
+          updatedAt: '',
+          fields: { ...evidenceFields, __metadata: { ...(evidenceConfiguration?.etag ? { etag: evidenceConfiguration.etag } : {}), sourceRevision: evidenceFields.revision } },
+        },
+        status: {
+          status: statusFields.status === 'healthy' || statusFields.status === 'degraded' || statusFields.status === 'blocked' || statusFields.status === 'disabled' || statusFields.status === 'unavailable' ? statusFields.status : 'unavailable',
+          ...(typeof statusFields.activeRevision === 'number' ? { activeRevision: statusFields.activeRevision } : {}),
+          pendingRecords: typeof statusFields.pendingRecords === 'number' ? statusFields.pendingRecords : 0,
+          deadLetterRecords: 0,
+          openProjectionIssues: 0,
+          openQualityIssues: 0,
+          highWatermarkActive: false,
+          ...(typeof statusFields.lastAcknowledgedSequence === 'string' ? { lastAcknowledgedSequence: statusFields.lastAcknowledgedSequence } : {}),
+          ...(typeof statusFields.lastAcknowledgedAt === 'string' ? { lastAcknowledgedAt: statusFields.lastAcknowledgedAt } : {}),
+          ...(typeof statusFields.oldestPendingAt === 'string' ? { oldestPendingAt: statusFields.oldestPendingAt } : {}),
+          ...(typeof statusFields.lastErrorCode === 'string' ? { lastErrorCode: statusFields.lastErrorCode } : {}),
+          observedAt: typeof statusFields.observedAt === 'string' ? statusFields.observedAt : '',
+        },
+      },
+    };
+    this.emit();
+  }
 }

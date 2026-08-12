@@ -24,9 +24,13 @@ export function TaskDetailPage({ id }: { id: string }) {
 }
 
 export function TaskBindingPage({ id, embedded = false }: { id: string; embedded?: boolean }) {
+  const { gatewayMode } = useConsole();
   const taskQuery = useRecord('task', id);
   const task = taskQuery.data;
-  const binding = task ? {
+  const liveBinding = task?.fields.capabilityBinding;
+  const binding = liveBinding && typeof liveBinding === 'object' && !Array.isArray(liveBinding)
+    ? liveBinding as Record<string, unknown>
+    : task && gatewayMode === 'mock' ? {
     bindingId: String(task.fields.capabilityBindingId), taskId: task.id,
     requestedCapabilityId: task.name.includes('Weather') ? 'cap-weather-awareness' : 'cap-route-planning',
     capabilityVersion: task.name.includes('Weather') ? 2 : 1,
@@ -36,7 +40,7 @@ export function TaskBindingPage({ id, embedded = false }: { id: string; embedded
     constraintSnapshot: { policyRevision: 12, budget: 'bounded' }, initialImplementationRefs: [String(task.fields.selectedSkillId)],
     providerPolicySnapshot: { route: 'route-planning', fallbackAllowed: true }, bindingHash: 'sha256:91e4…7ca0', boundAt: task.fields.createdAt ?? '2026-07-31T03:20:00.000Z',
   } : undefined;
-  const body = !task || !binding ? <EmptyState title="Capability Binding 不可用" detail="未找到任务投影，无法组合不可变 Binding 视图。" /> : <><Callout title="接受时不可变" tone="warning">Capability Binding 在任务被接受时冻结。后续 Skill、Provider 或 Capability 变化不会重写该绑定。</Callout><div className="detail-grid"><Panel title="绑定身份"><DefinitionList fields={binding as never} /></Panel><Panel title="快照校验"><div className="binding-proof"><LockKeyhole /><strong>{binding.bindingHash}</strong><p>该 Hash 覆盖输入、成功标准、证据、约束、实施引用和 Provider Policy 快照。</p></div></Panel></div><Panel title="完整 Binding DTO"><JsonViewer value={binding} label="TaskCapabilityBinding" /></Panel></>;
+  const body = !task || !binding ? <EmptyState title="Capability Binding 不可用" detail="未找到任务投影，无法组合不可变 Binding 视图。" /> : <><Callout title="接受时不可变" tone="warning">Capability Binding 在任务被接受时冻结。后续 Skill、Provider 或 Capability 变化不会重写该绑定。</Callout><div className="detail-grid"><Panel title="绑定身份"><DefinitionList fields={binding as never} /></Panel><Panel title="快照校验"><div className="binding-proof"><LockKeyhole /><strong>{String(binding.bindingHash ?? '')}</strong><p>该 Hash 覆盖输入、成功标准、证据、约束、实施引用和 Provider Policy 快照。</p></div></Panel></div><Panel title="完整 Binding DTO"><JsonViewer value={binding} label="TaskCapabilityBinding" /></Panel></>;
   if (embedded) return <>{body}</>;
   return <div className="page-stack"><section className="page-intro"><div><Button variant="ghost" onClick={() => navigate(`/tasks/${id}`)}><ArrowLeft size={15} />返回任务</Button><span className="eyebrow">GET /api/v1/tasks/{'{taskId}'}/capability-binding</span><h2>不可变 Capability Binding</h2><p>用于证明任务接受时实际绑定的能力定义和实施选择。</p></div></section>{body}</div>;
 }
@@ -70,9 +74,9 @@ export function EventsPage() {
 }
 
 export function AccessPage() {
-  const { role, setRole } = useConsole();
+  const { role, gatewayMode, securityClassification, setRole } = useConsole();
   const scopes = Array.from(new Set(Object.values(ROLE_SCOPES).flat())).sort() as Scope[];
-  return <div className="page-stack"><section className="page-intro"><div><span className="eyebrow">Bearer / OIDC compatible</span><h2>RBAC 与安全边界</h2><p>角色和 Actor 从可信身份解析；控制台只模拟角色切换，不实现登录、Token 或 Session。</p></div><SelectField label="检查角色" value={role} onChange={(value) => setRole(value as RoleId)} options={Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label }))} /></section>
+  return <div className="page-stack"><section className="page-intro"><div><span className="eyebrow">Bearer / OIDC compatible</span><h2>RBAC 与安全边界</h2><p>角色和 Actor 从可信身份解析；控制台只模拟角色切换，不实现登录、Token 或 Session。</p></div>{gatewayMode === 'live' ? <div className="deployment-identity" aria-label="Active Deployment Identity"><span>Active Deployment Identity</span><strong>{ROLE_LABELS[role]}</strong><small>{securityClassification}</small></div> : <SelectField label="检查角色" value={role} onChange={(value) => setRole(value as RoleId)} options={Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label }))} />}</section>
     <Callout title="Fail Closed" tone="warning">未知角色、不合法 Scope、缺失 If-Match、幂等冲突、明文 Secret 或非 Loopback 未配置认证时必须拒绝。</Callout>
     <div className="metric-grid three"><MetricCard label="角色" value={Object.keys(ROLE_SCOPES).length} detail="冻结 RBAC Matrix" /><MetricCard label="Scopes" value={scopes.length} detail="读写能力边界" /><MetricCard label="Secret 明文" value="0" detail="仅 credentialRef" tone="success" /></div>
     <Panel title="角色 Scope Matrix"><div className="rbac-table"><div className="rbac-head"><span>Scope</span>{Object.keys(ROLE_SCOPES).map((item) => <span key={item}>{ROLE_LABELS[item as RoleId]}</span>)}</div>{scopes.map((scope) => <div className="rbac-row" key={scope}><strong>{scope}</strong>{Object.entries(ROLE_SCOPES).map(([roleId, roleScopes]) => <span key={roleId} className={roleScopes.includes(scope) ? 'allow' : 'deny'}>{roleScopes.includes(scope) ? '✓' : '—'}</span>)}</div>)}</div></Panel>
@@ -104,12 +108,14 @@ export function SystemStatePage({ kind }: { kind: '403' | '500' | 'maintenance' 
 }
 
 export function CapabilityImplementationsPage({ id, version }: { id: string; version: string }) {
+  const { gatewayMode } = useConsole();
   const capabilityId = `${id}@${version}`;
   const query = useRecord('capability', capabilityId);
-  const bindings = [
+  const liveBindings = query.data?.fields.implementationBindings;
+  const bindings = Array.isArray(liveBindings) ? liveBindings : gatewayMode === 'mock' ? [
     { bindingId: 'impl-route-skill-primary', implementationType: 'skill', implementationId: 'skill-route-plan', implementationVersion: '2.4.0', role: 'primary', priority: 10, status: 'active', revision: 4 },
     { bindingId: 'impl-route-plan-alternative', implementationType: 'plan_template', implementationId: 'plan-urban-delivery', implementationVersion: '3.1.0', role: 'alternative', priority: 20, status: 'active', revision: 2 },
-  ];
+  ] : [];
   if (!query.data) return <EmptyState title="Capability 不存在" detail={`未找到 ${capabilityId}`} action={<Button onClick={() => navigate('/capabilities')}>返回 Capability</Button>} />;
   return <div className="page-stack"><section className="page-intro"><div><Button variant="ghost" onClick={() => navigate(`/capabilities/${id}/${version}`)}><ArrowLeft size={15} />返回 Capability</Button><span className="eyebrow">Capability implementation bindings</span><h2>{query.data.name} · 实施绑定</h2><p>Skill 与 Plan Template 作为 Capability 的可选择实施，不改变 Capability 定义权威。</p></div><OperationAction operationId="createCapabilityImplementation" target={{ type: 'capability', id: capabilityId, revision: Number(query.data.revision ?? 1) }} label="添加实施绑定" /></section><Callout title="绑定语义">每个绑定具有角色、优先级、激活条件和 Provider Policy Override。Runtime Readiness 根据绑定和 Provider 状态计算。</Callout><Panel title="当前实施绑定"><div className="implementation-grid">{bindings.map((binding) => <article key={binding.bindingId}><header><Badge value={binding.status} /><strong>{binding.role}</strong><span>Priority {binding.priority}</span></header><h3>{binding.implementationId}@{binding.implementationVersion}</h3><p>{binding.implementationType === 'skill' ? '不可变 Skill 版本' : '受治理 Plan Template 版本'}</p><small>Binding Revision {binding.revision}</small></article>)}</div></Panel><Panel title="Implementation Binding DTO"><JsonViewer value={bindings} label="CapabilityImplementationBinding[]" /></Panel></div>;
 }

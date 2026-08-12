@@ -52,6 +52,6 @@ function renderRoute(route: RouteMatch) {
 function lookupId(route: RouteMatch) {
   const id = route.params.id ?? '';
   const version = route.params.version;
-  if (version && ['skill', 'planTemplate', 'capability', 'readiness', 'a2aExposure'].includes(route.kind ?? '')) return `${id}@${version}`;
+  if (version && ['configuration', 'skill', 'planTemplate', 'capability', 'readiness', 'a2aExposure'].includes(route.kind ?? '')) return `${id}@${version}`;
   return id;
 }

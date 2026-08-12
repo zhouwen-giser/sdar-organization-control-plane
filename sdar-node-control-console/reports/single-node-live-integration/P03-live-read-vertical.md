@@ -77,6 +77,11 @@ The built Console was exercised in the in-app browser against the same real BFF:
 
 `c059302b7c785407ccb4a8041ea35f50b4c77840`
 
+## Evidence Commit and Remote Verification
+
+- Evidence commit: `5a546f4d7b2f3c5b6fa5a01eb7a6ae762e90396b`
+- `git ls-remote origin refs/heads/feature/single-node-console-live-integration` matched the evidence commit exactly before phase closure.
+
 ## Remaining Work
 
 - P04 will replace command mapping-pending with real mutation semantics, optimistic concurrency and operation follow-up.

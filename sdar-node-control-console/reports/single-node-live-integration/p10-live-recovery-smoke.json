@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "observedAt": "2026-08-12T02:51:47.136Z",
+  "isolatedBffPort": 4190,
+  "nodeControlUnreachable": {
+    "status": 502,
+    "problemCode": "CONSOLE_PROXY_UPSTREAM_FAILED"
+  },
+  "firstRecovery": {
+    "status": 200,
+    "nodeIdSha256": "b43340962b0580e24f182ce119dc45f0817e45e4ea94735921017ae2ceafd490"
+  },
+  "bffRestartRecovery": {
+    "status": 200,
+    "sameAuthoritativeNode": true
+  },
+  "browserSnapshotUsedAsAuthority": false,
+  "authoritativeGetAfterRecovery": true,
+  "realSdarProcessStopped": false,
+  "realSmppProcessStopped": false,
+  "deviceWriteGateChanged": false,
+  "secretsIncluded": false
+}
